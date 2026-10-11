@@ -1,0 +1,2 @@
+<script setup>import Hero from '../components/Hero.vue'; import CourseCard from '../components/CourseCard.vue'; import {catalog} from '../state'</script>
+<template><Hero title="找到適合你的練習" subtitle="每一種節奏，都有屬於你的課程"/><section class="container section"><div class="section-heading"><h2>課程介紹</h2><span>{{catalog.courses.length}} 種課程</span></div><div class="course-grid"><CourseCard v-for="c in catalog.courses" :key="c.id" :course="c"/></div><p v-if="!catalog.courses.length" class="empty">目前尚無公開課程。</p></section></template>

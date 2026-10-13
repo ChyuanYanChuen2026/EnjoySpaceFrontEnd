@@ -1,2 +1,12 @@
 <script setup>defineProps({ title: String, subtitle: String, home: Boolean })</script>
-<template><section class="hero" :class="{ 'hero-home':home }"><div class="container hero-inner"><p class="eyebrow">YOGA · A MORE MINDFUL YOU</p><h1>{{title}}</h1><h2>{{subtitle}}</h2><p class="hero-copy">在一呼一吸之間，留一點時間給自己。<br>讓身體舒展，讓心回到平靜。</p><slot/></div><span class="hero-note">Breathe.<br>Move.<br>Be you.</span></section></template>
+<template>
+  <section class="hero" :class="{ 'hero-home': home }">
+    <div class="container hero-inner">
+      <p class="eyebrow">YOGA · A MORE MINDFUL YOU</p>
+      <h1>{{ title }}</h1>
+      <h2>{{ subtitle }}</h2>
+      <p class="hero-copy">在一呼一吸之間，留一點時間給自己。<br>讓身體舒展，讓心回到平靜。</p>
+      <slot />
+    </div><span class="hero-note">Breathe.<br>Move.<br>Be you.</span>
+  </section>
+</template>

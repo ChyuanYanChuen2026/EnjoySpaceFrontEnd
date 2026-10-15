@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="js">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { catalogRevision } from '../state'

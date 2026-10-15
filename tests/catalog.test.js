@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { money, validity, audience, calendarDate } from '../src/api.js'
+import { apiClient, money, validity, audience, calendarDate } from '../src/api.js'
 
 test('display values preserve backend currency precision, validity and audience labels', () => {
   assert.equal(money(2468.75), '2,468.75')
@@ -14,13 +14,14 @@ test('display values preserve backend currency precision, validity and audience 
 
 test('catalog refresh replaces old API data and coalesces simultaneous reads', async () => {
   const { catalog, loadCatalog, catalogRevision } = await import('../src/state.js')
-  const original = globalThis.fetch
+  const original = apiClient.defaults.adapter
   let requests = 0
-  globalThis.fetch = async (url, options) => {
-    assert.equal(url, '/api/portal/catalog')
-    assert.equal(options.cache, 'no-store')
+  apiClient.defaults.adapter = async config => {
+    assert.equal(config.baseURL, '/api/portal')
+    assert.equal(config.url, '/catalog')
+    assert.equal(config.headers.get('Cache-Control'), 'no-cache')
     requests++
-    return Response.json({ courses: [{ id: 1, name: '後台課程', termPrice: requests === 1 ? 300 : 500 }], plans: [], locations: [], terms: [] })
+    return { config, status: 200, statusText: 'OK', headers: {}, data: JSON.stringify({ courses: [{ id: 1, name: '後台課程', termPrice: requests === 1 ? 300 : 500 }], plans: [], locations: [], terms: [] }) }
   }
   try {
     await Promise.all([loadCatalog(), loadCatalog()])
@@ -30,5 +31,5 @@ test('catalog refresh replaces old API data and coalesces simultaneous reads', a
     assert.equal(requests, 2)
     assert.equal(catalog.value.courses[0].termPrice, 500)
     assert.equal(catalogRevision.value, 2)
-  } finally { globalThis.fetch = original }
+  } finally { apiClient.defaults.adapter = original }
 })

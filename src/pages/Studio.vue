@@ -1,8 +1,7 @@
-<script setup>  
-import Hero from '../components/Hero.vue'; 
-import { catalog } from '../state'; 
-import { MapPin } from 'lucide-vue-next';
-
+<script setup lang="js">
+import Hero from '../components/Hero.vue'
+import { catalog } from '../state.js'
+import { MapPin } from 'lucide-vue-next'
 </script>
 <template>
   <Hero title="安放身心的日常空間" subtitle="在城市裡，找到一段安靜的時光" />

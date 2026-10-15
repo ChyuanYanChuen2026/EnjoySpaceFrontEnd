@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="js">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, X, ArrowUpRight } from 'lucide-vue-next'

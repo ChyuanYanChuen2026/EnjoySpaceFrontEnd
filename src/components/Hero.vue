@@ -1,4 +1,8 @@
-<script setup>defineProps({ title: String, subtitle: String, home: Boolean })</script>
+<script setup lang="js">
+defineProps({ title: String, subtitle: String, home: Boolean })
+
+</script>
+
 <template>
   <section class="hero" :class="{ 'hero-home': home }">
     <div class="container hero-inner">

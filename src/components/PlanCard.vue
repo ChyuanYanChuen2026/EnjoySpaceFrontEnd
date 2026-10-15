@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="js">
 import { money, validity, audience } from '../api'
 defineProps({ plan: { type: Object, required: true } })
 </script>

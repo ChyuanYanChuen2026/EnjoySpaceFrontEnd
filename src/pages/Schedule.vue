@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="js">
 import { ref, computed, onMounted, watch } from 'vue'; 
 import { api, date, time } from '../api';
 import { useRoute } from 'vue-router';
@@ -10,9 +10,12 @@ import { CalendarDays, List, UserRound, MapPin, SlidersHorizontal } from 'lucide
 const sessions = ref([]), busy = ref(false), error = ref(''), category = ref(''), teacher = ref(''), location = ref(''), calendar = ref(false)
 const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
 const from = ref(today), until = ref(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + 30 * 86400000)))
-const categories = computed(() => [...new Set(sessions.value.map(s => s.category))]), teachers = computed(() => [...new Set(sessions.value.map(s => s.teacher))]), locations = computed(() => [...new Set(sessions.value.map(s => s.location))])
+const categories = computed(() => [...new Set(sessions.value.map(s => s.category))]); 
+const teachers = computed(() => [...new Set(sessions.value.map(s => s.teacher))]);
+const locations = computed(() => [...new Set(sessions.value.map(s => s.location))]);
 const filtered = computed(() => sessions.value.filter(s => (!courseId.value || s.courseId === Number(courseId.value)) && (!termId.value || s.termId === Number(termId.value)) && (!category.value || s.category === category.value) && (!teacher.value || s.teacher === teacher.value) && (!location.value || s.location === location.value)))
 const groups = computed(() => Object.entries(filtered.value.reduce((days, session) => { (days[date(session.startsAt)] ||= []).push(session); return days }, {})))
+
 let requestVersion = 0
 async function load() {
   const version = ++requestVersion

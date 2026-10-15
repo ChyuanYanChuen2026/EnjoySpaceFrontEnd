@@ -9,7 +9,7 @@
 3. 在 MVC 專案執行 `dotnet run --launch-profile http`（`http://localhost:5209`）。
 4. 在本目錄執行 `npm ci`、`npm run dev`，開啟 `http://127.0.0.1:4000`。套件已完整安裝時，後續只需 `npm run dev`。
 
-Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同一個官網網址操作登入與送出表單。
+Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同一個官網網址操作登入與送出表單。所有前台 API 請求統一透過 `src/api.js` 的 Axios 實例，保留 Cookie、防偽 token、JSON 驗證與錯誤提示，連線逾時為 15 秒。
 
 後台連接埠不同時，複製 `.env.example` 為 `.env.local`，設定 `API_PROXY_TARGET` 後重啟 Vite。例如獨立 Demo 使用 `http://localhost:5210`。`npm run preview` 也會使用相同代理設定。
 
@@ -45,7 +45,7 @@ GET：`csrf`、`catalog`、`courses/{id}`、`sessions`、`me`、`dashboard`。
 
 POST：`login`、`register`、`logout`、`trial-requests`。所有寫入需先取得 `csrf` 的 token，透過 `X-CSRF-TOKEN` 送出。登入與登出後需重新取得 token。
 
-前端原始碼皆使用 `.js` 與 Vue `<script setup>`，沒有 TypeScript 建置步驟。
+前端原始碼皆使用 `.js` 與 Vue `<script setup lang="js">`，沒有 TypeScript 建置步驟。`defineProps({ title: String })` 等寫法是 Vue 的 JavaScript 執行期屬性定義，並非 TypeScript 型別註記。第三方套件附帶的 `.d.ts` 是套件提供的型別資訊，不屬於本專案原始碼，不需刪除。
 
 ## 檢查
 

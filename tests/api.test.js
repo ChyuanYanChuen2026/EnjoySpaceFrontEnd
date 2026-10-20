@@ -1,7 +1,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-const reply = (config, data, status = 200) => ({ config, data: JSON.stringify(data), status, statusText: '', headers: {} })
+const reply = (config, data, status = 200) => ({ 
+  config, 
+  data: JSON.stringify(data), 
+  status, 
+  statusText: '', 
+  headers: {} 
+})
 
 test('Axios sends JSON and CSRF, then refreshes the token after a rejected form', async () => {
   const { api, apiClient } = await import('../src/api.js?validation')

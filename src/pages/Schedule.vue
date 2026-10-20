@@ -3,7 +3,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { api, date, time } from '../api';
 import { useRoute } from 'vue-router';
 import { catalog, catalogRevision } from '../state';
-const route = useRoute(); const courseId = ref(Number(route.query.course) || ''); const termId = ref(''); 
+const route = useRoute(); 
+const courseId = ref(Number(route.query.course) || ''); 
+const termId = ref(''); 
 import Hero from '../components/Hero.vue'; 
 import { CalendarDays, List, UserRound, MapPin, SlidersHorizontal } from 'lucide-vue-next';
 

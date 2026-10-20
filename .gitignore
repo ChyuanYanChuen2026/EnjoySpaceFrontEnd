@@ -7,3 +7,5 @@
 **/*.log
 **/appsettings.Development.json
 **/docs
+**/tests
+tests/*.test.js

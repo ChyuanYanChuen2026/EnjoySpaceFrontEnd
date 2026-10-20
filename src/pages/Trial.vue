@@ -3,7 +3,8 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import Hero from "../components/Hero.vue";
 import { api, date, time, money, validity, ApiError } from "../api";
-import { catalog, member, refreshMember, trialDraft, catalogRevision } from "../state";
+import { catalog, member, refreshMember, trialDraft, catalogRevision, loading as loadingCatalog } from "../state";
+import { trialApplicationIssue } from "../trialApplication.js";
 import { CalendarDays, Clock3, UserRound, MapPin, CheckCircle2, LockKeyhole } from "lucide-vue-next";
 
 const route = useRoute();
@@ -17,13 +18,22 @@ const loadingSessions = ref(true);
 const error = ref("");
 const success = ref("");
 const submissionKey = ref(draft?.submissionKey || crypto.randomUUID());
-const form = ref(draft?.form || { name: "", phone: "", email: "", lineId: "", note: "" });
+const form = ref({ name: "", phone: "", email: "", lineId: "", note: "", referrerName: "", ...draft?.form });
 const selected = computed(() => sessions.value.find((s) => s.id === sessionId.value));
 const plans = computed(() => catalog.value.plans.filter((p) => p.planType === "Trial" && p.audienceType === "TrialGuest"));
-const canApply = computed(() => !member.value || member.value.roles.some((r) => ["Student", "TrialGuest"].includes(r)));
+const selectedPlan = computed(() => plans.value.find(p => p.id === planId.value));
+const applicationIssue = computed(() => trialApplicationIssue({
+  member: member.value, plans: plans.value, planId: planId.value,
+  session: selected.value, loading: loadingSessions.value || loadingCatalog.value, referrerName: form.value.referrerName,
+}));
 
 function saveDraft() {
-  trialDraft.value = { form: { ...form.value }, sessionId: sessionId.value, planId: planId.value, submissionKey: submissionKey.value };
+  trialDraft.value = { 
+    form: { ...form.value }, 
+    sessionId: sessionId.value, 
+    planId: planId.value, 
+    submissionKey: submissionKey.value 
+  };
 }
 
 function login() {
@@ -80,6 +90,9 @@ watch(catalogRevision, () => {
 });
 
 async function submit() {
+  if (busy.value) return;
+  const issue = trialApplicationIssue({ member: member.value, plans: plans.value, planId: planId.value, session: selected.value, loading: loadingSessions.value || loadingCatalog.value, referrerName: form.value.referrerName });
+  if (issue) { error.value = issue; return; }
   if (!member.value) {
     login();
     return;
@@ -88,7 +101,7 @@ async function submit() {
   error.value = "";
   try {
     const r = await api("/trial-requests", { ...form.value, sessionId: sessionId.value, planId: planId.value, submissionKey: submissionKey.value });
-    success.value = r.message || "體驗申請已送出，請至會員專區查看。";
+    success.value = (r.message || "體驗申請已送出，請至會員專區查看。") + (selectedPlan.value?.requiresReferrer ? " 免費體驗請直接聯繫工作室管理員登記安排上課。" : "");
     trialDraft.value = null;
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) {
@@ -113,6 +126,7 @@ async function submit() {
       <div>
         <section class="panel">
           <h2>選擇你的課程</h2>
+          <p class="muted">先選一個希望上的場次，實際上課時間與其餘堂數由工作室聯繫安排。</p>
           <p v-if="loadingSessions" role="status">讀取場次中…</p>
           <p v-else-if="!sessions.length" class="empty">目前沒有開放的近期場次。</p>
           <label
@@ -138,9 +152,8 @@ async function submit() {
             <span>
               <strong>{{ p.name }}</strong>
               <b>{{ p.sessionQuota }} 堂 · NT$ {{ money(p.price) }}</b>
-              <small>{{
-                p.validityUnit === "Days" ? `效期 ${p.validityValue} 天` : "效期依方案規定"
-              }}</small>
+              <small v-if="!p.requiresReferrer">{{ validity(p) }}，生效日由工作室確認。</small>
+              <small v-if="p.requiresReferrer">須填寫介紹人，並直接聯繫管理員登記安排免費體驗。</small>
             </span>
           </label>
           <p v-if="!plans.length" class="empty">目前尚無開放的體驗方案。</p>
@@ -148,14 +161,16 @@ async function submit() {
       </div>
       <section class="panel">
         <h2>填寫申請資料</h2>
-        <p v-if="!member" class="notice">送出前請先 <RouterLink :to="{ path: '/login', query: { redirect: route.fullPath } }"> 登入或註冊體驗生帳號</RouterLink>，即可追蹤申請。</p>
+        <label v-if="selectedPlan?.requiresReferrer">介紹人姓名 *<input v-model="form.referrerName" required maxlength="100" placeholder="請填寫介紹您的舊生姓名" /><small>送出介紹資料後，請直接聯繫工作室管理員核對、登記並安排免費體驗課。</small></label>
+        <p v-if="!member" class="notice">送出前請先 <RouterLink :to="{ path: '/login', query: { redirect: route.fullPath } }">登入或註冊學生帳號</RouterLink>，即可追蹤申請。</p>
         <label>姓名 *<input v-model="form.name" autocomplete="name" required maxlength="100" /></label><label>電話 *<input v-model="form.phone" autocomplete="tel" type="tel" required maxlength="30" /></label><label>Email *<input v-model="form.email" autocomplete="email" type="email" required maxlength="200" /></label><label>LINE ID<input v-model="form.lineId" maxlength="100" placeholder="選填" /></label
         ><label
           >備註<textarea v-model="form.note" rows="4" maxlength="300" placeholder="有任何想告訴我們的事嗎？（選填）"></textarea><small>{{ form.note.length }} / 300</small></label
         >
-        <p class="muted">申請送出後，工作室將聯繫您確認課程與付款。申請不代表完成預約，也不會立即保留名額。</p>
+        <p class="muted">申請送出後，待工作室人工審核、聯繫確認並安排登記上課。申請不代表完成預約，也不會立即保留名額。</p>
         <p v-if="error" class="notice error" role="alert">{{ error }}</p>
-        <button class="button wide" :disabled="busy || !selected || !planId || !!!canApply">{{ busy ? "送出中…" : "送出體驗申請" }}</button>
+        <p v-if="applicationIssue" class="notice" role="status">{{ applicationIssue }}</p>
+        <button class="button wide" :disabled="busy || !!applicationIssue">{{ busy ? "送出中…" : member ? "送出體驗申請" : "登入後送出體驗申請" }}</button>
         <p v-if="member?.roles.includes('Teacher')" class="muted">老師帳號請使用會員專區查看授課行程。</p>
         <p class="privacy"><LockKeyhole :size="14" />資料僅供工作室聯繫與課程安排使用。</p>
       </section>

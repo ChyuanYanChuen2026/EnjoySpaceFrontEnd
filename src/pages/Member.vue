@@ -90,6 +90,8 @@ async function logout() {
         <div>
           <h3>{{ r.name }}</h3>
           <p>{{ date(r.startsAt) }} · {{ time(r.startsAt) }} · {{ r.planName }} · NT$ {{ money(r.quotedPrice) }}</p>
+          <p v-if="r.referrerName">介紹人：{{ r.referrerName }}（由工作室核對）</p>
+          <p v-if="r.status !== 'Cancelled'">由工作室人工審核並安排登記上課。</p>
         </div>
         <span class="badge">{{ status[r.status] || r.status }}</span>
       </article>

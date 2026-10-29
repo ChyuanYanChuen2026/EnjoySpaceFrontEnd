@@ -2,9 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { apiClient, money, validity, audience, calendarDate } from '../src/api.js'
 
-test('display values preserve backend currency precision, validity and audience labels', () => {
-  assert.equal(money(2468.75), '2,468.75')
-  assert.equal(money(321), '321.00')
+test('display values use whole currency amounts and preserve validity and audience labels', () => {
+  assert.equal(money(2468.75), '2,469')
+  assert.equal(money(321), '321')
   assert.equal(validity({ validityUnit: 'Unlimited' }), '不限期')
   assert.equal(validity({ validityUnit: 'Days', validityValue: 30 }), '30 天（含生效日）')
   assert.equal(validity({ validityText: '4 個月', validityUnit: 'Months', validityValue: 4 }), '4 個月')

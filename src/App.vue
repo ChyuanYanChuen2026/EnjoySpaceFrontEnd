@@ -28,6 +28,7 @@ onUnmounted(() => window.removeEventListener('focus', refreshWhenVisible))
   </div>
 </header>
   <main>
+    <!-- 要記得拿掉更新時間 -->
     <div class="container data-refresh"><span v-if="refreshedAt">{{ loadError ? '目前顯示上次資料' : '資料更新' }}：{{ refreshedAt.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false }) }}</span><button class="text-button" @click="loadCatalog" :disabled="loading">{{ loading ? '更新中…' : '更新資料' }}</button></div>
     <div v-if="loadError" class="notice error" role="alert">{{ loadError }} 
       <button @click="loadCatalog">重新載入</button>

@@ -28,10 +28,10 @@ const applicationIssue = computed(() => trialApplicationIssue({
 }));
 
 function saveDraft() {
-  trialDraft.value = { 
-    form: { ...form.value }, 
-    sessionId: sessionId.value, 
-    planId: planId.value, 
+  trialDraft.value = {
+    form: { ...form.value },
+    sessionId: sessionId.value,
+    planId: planId.value,
     submissionKey: submissionKey.value 
   };
 }
@@ -161,12 +161,18 @@ async function submit() {
       </div>
       <section class="panel">
         <h2>填寫申請資料</h2>
-        <label v-if="selectedPlan?.requiresReferrer">介紹人姓名 *<input v-model="form.referrerName" required maxlength="100" placeholder="請填寫介紹您的舊生姓名" /><small>送出介紹資料後，請直接聯繫工作室管理員核對、登記並安排免費體驗課。</small></label>
+        <label v-if="selectedPlan?.requiresReferrer">介紹人姓名 *<input v-model="form.referrerName" required maxlength="100" placeholder="請填寫介紹您的舊生姓名" />
+          <small>送出介紹資料後，請直接聯繫工作室管理員核對、登記並安排免費體驗課。</small>
+        </label>
         <p v-if="!member" class="notice">送出前請先 <RouterLink :to="{ path: '/login', query: { redirect: route.fullPath } }">登入或註冊學生帳號</RouterLink>，即可追蹤申請。</p>
-        <label>姓名 *<input v-model="form.name" autocomplete="name" required maxlength="100" /></label><label>電話 *<input v-model="form.phone" autocomplete="tel" type="tel" required maxlength="30" /></label><label>Email *<input v-model="form.email" autocomplete="email" type="email" required maxlength="200" /></label><label>LINE ID<input v-model="form.lineId" maxlength="100" placeholder="選填" /></label
-        ><label
-          >備註<textarea v-model="form.note" rows="4" maxlength="300" placeholder="有任何想告訴我們的事嗎？（選填）"></textarea><small>{{ form.note.length }} / 300</small></label
-        >
+        <label>姓名 *<input v-model="form.name" autocomplete="name" required maxlength="100" /></label>
+        <label>電話 *<input v-model="form.phone" autocomplete="tel" type="tel" required maxlength="30" /></label>
+        <label>Email *<input v-model="form.email" autocomplete="email" type="email" required maxlength="200" /></label>
+        <label>LINE ID<input v-model="form.lineId" maxlength="100" placeholder="選填" /></label>
+        <label>備註
+          <textarea v-model="form.note" rows="4" maxlength="300" placeholder="有任何想告訴我們的事嗎？（選填）"></textarea>
+          <small>{{ form.note.length }} / 300</small>
+        </label>
         <p class="muted">申請送出後，待工作室人工審核、聯繫確認並安排登記上課。申請不代表完成預約，也不會立即保留名額。</p>
         <p v-if="error" class="notice error" role="alert">{{ error }}</p>
         <p v-if="applicationIssue" class="notice" role="status">{{ applicationIssue }}</p>

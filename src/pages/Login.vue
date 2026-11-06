@@ -5,7 +5,7 @@ import { useRouter, useRoute } from "vue-router";
 import { api } from "../api";
 import { refreshMember } from "../state";
 import { Flower2 } from "lucide-vue-next";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../taiwanMobile";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../validationErrors.js";
 
 const router = useRouter(),
   route = useRoute(),

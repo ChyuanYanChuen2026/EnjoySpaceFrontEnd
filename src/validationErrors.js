@@ -1,3 +1,13 @@
+// 註冊與體驗申請共用：僅接受 09 開頭的 10 碼 ASCII 數字，不接受空格或符號。
+export const TAIWAN_MOBILE_PATTERN = '09[0-9]{8}';
+export const TAIWAN_MOBILE_MESSAGE = '請輸入 09 開頭的 10 碼手機號碼，例如 0912345678（不含空格或符號）。';
+const mobilePattern = new RegExp(`^(?:${TAIWAN_MOBILE_PATTERN})(?![\\s\\S])`, 'u');
+
+export function isTaiwanMobile(value) {
+  return typeof value === 'string' && value.length === 10 && mobilePattern.test(value);
+}
+
+// 將 API 欄位驗證錯誤整理成學生可理解的中文提示。
 const labels = {
   account: '帳號', password: '密碼', confirmpassword: '確認密碼', name: '姓名',
   email: '電子郵件', phone: '手機', lineid: 'LINE ID', note: '備註', referrername: '介紹人姓名',

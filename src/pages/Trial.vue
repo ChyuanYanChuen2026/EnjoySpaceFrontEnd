@@ -6,7 +6,7 @@ import Hero from "../components/Hero.vue";
 import { api, date, time, money, validity, ApiError } from "../api";
 import { catalog, member, refreshMember, trialDraft, catalogRevision, loading as loadingCatalog } from "../state";
 import { trialApplicationIssue } from "../trialApplication.js";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../taiwanMobile";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../validationErrors.js";
 import { newRequestKey } from "../requestKey";
 import { CalendarDays, Clock3, UserRound, MapPin, CheckCircle2, LockKeyhole } from "lucide-vue-next";
 

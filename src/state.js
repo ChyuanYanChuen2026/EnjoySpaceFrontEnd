@@ -1,7 +1,6 @@
 import { ref } from "vue";
 import { api } from "./api.js";
 export const member = ref(null);
-// Keep unsent contact details in memory while navigating to login, never browser storage.
 export const trialDraft = ref(null);
 export async function refreshMember() {
   try {

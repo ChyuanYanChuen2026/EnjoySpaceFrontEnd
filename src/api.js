@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { portalValidationMessage } from './validationErrors.js';
 
 export const apiClient = axios.create({
   baseURL: '/api/portal',
@@ -38,7 +39,11 @@ export async function api(path, body) {
     if (response.status === 401 || response.status === 400) token = "";
     const validation = error.errors ? Object.values(error.errors).flat().join("；") : "";
     const fallback = response.status === 401 ? "請先登入會員。" : response.status === 403 ? "此帳號沒有使用此功能的權限。" : response.status === 429 ? "操作較頻繁，請稍候一分鐘再試。" : response.status === 400 ? "表單驗證失敗，請確認資料後重新送出。" : "目前無法取得工作室資料，請稍後再試。";
-    throw new ApiError(response.status, error.message || validation || (response.status < 500 ? error.detail : "") || fallback);
+    const scopedValidation = /^\/(login|register|trial-requests|my-trials)(\/|$|\?)/.test(path);
+    const failure = new ApiError(response.status, scopedValidation ? portalValidationMessage(error, fallback) : error.message || validation || (response.status < 500 ? error.detail : "") || fallback);
+    failure.code = error.code;
+    failure.sessionId = error.sessionId;
+    throw failure;
   }
   if (["/login", "/logout"].includes(path)) token = "";
   if (response.status === 204) return undefined;

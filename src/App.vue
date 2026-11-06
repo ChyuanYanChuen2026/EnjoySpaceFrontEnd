@@ -1,11 +1,12 @@
 <script setup lang="js">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, X, ArrowUpRight } from 'lucide-vue-next'
 import BrandMark from './components/BrandMark.vue'
 import { member, refreshMember, loadCatalog, loadError, loading, refreshedAt } from './state'
 const menu = ref(false)
 const route = useRoute()
+const memberPage = computed(() => ['/member', '/member/courses', '/member/makeup', '/member/enrollments'].includes(route.path.replace(/\/$/, '')))
 function refreshWhenVisible() { if (document.visibilityState === 'visible') loadCatalog() }
 watch(() => route.path, () => { menu.value = false; loadCatalog() }, { immediate: true })
 onMounted(() => { refreshMember(); window.addEventListener('focus', refreshWhenVisible) })
@@ -28,8 +29,7 @@ onUnmounted(() => window.removeEventListener('focus', refreshWhenVisible))
   </div>
 </header>
   <main>
-    <!-- 要記得拿掉更新時間 -->
-    <div class="container data-refresh"><span v-if="refreshedAt">{{ loadError ? '目前顯示上次資料' : '資料更新' }}：{{ refreshedAt.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false }) }}</span><button class="text-button" @click="loadCatalog" :disabled="loading">{{ loading ? '更新中…' : '更新資料' }}</button></div>
+    <div v-if="!memberPage" class="container data-refresh"><span v-if="refreshedAt">{{ loadError ? '目前顯示上次資料' : '資料更新' }}：{{ refreshedAt.toLocaleTimeString('zh-TW', { timeZone: 'Asia/Taipei', hour12: false }) }}</span><button class="text-button" @click="loadCatalog" :disabled="loading">{{ loading ? '更新中…' : '更新資料' }}</button></div>
     <div v-if="loadError" class="notice error" role="alert">{{ loadError }} 
       <button @click="loadCatalog">重新載入</button>
     </div>

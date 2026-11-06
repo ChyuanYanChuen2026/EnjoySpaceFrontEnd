@@ -1,23 +1,30 @@
 <script setup lang="js">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { catalogRevision } from '../state'
+import { catalogRevision, member } from '../state'
 import { api, date, time, money, calendarDate } from '../api'
 import { CalendarDays, MapPin, UserRound } from 'lucide-vue-next'
 const route = useRoute(), course = ref(null), sessions = ref([]), busy = ref(true), error = ref('')
+const enrollmentState = ref(null), enrollmentError = ref('')
 const next = computed(() => sessions.value.find(s => s.enrolled < s.capacity) || sessions.value[0])
 let requestVersion = 0
 async function load() {
   const version = ++requestVersion
-  busy.value = true; error.value = ''
+  busy.value = true; error.value = ''; enrollmentState.value = null; enrollmentError.value = ''
   try {
     const data = await api('/courses/' + encodeURIComponent(route.params.id))
     if (version !== requestVersion) return
     course.value = data.course; sessions.value = data.sessions
+    if (member.value?.roles.includes('Student')) {
+      try {
+        const result = await api(`/enrollments/status/${encodeURIComponent(route.params.id)}`)
+        if (version === requestVersion) enrollmentState.value = result.existing
+      } catch { if (version === requestVersion) enrollmentError.value = '目前無法確認您的報名狀態，請到會員專區查看或重新載入。' }
+    }
   } catch (e) { if (version === requestVersion) { course.value = null; sessions.value = []; error.value = e.message } }
   finally { if (version === requestVersion) busy.value = false }
 }
-watch([() => route.params.id, catalogRevision], load, { immediate: true })
+watch([() => route.params.id, catalogRevision, () => member.value?.roles.includes('Student')], load, { immediate: true })
 </script>
 <template>
   <section class="container section">
@@ -47,19 +54,30 @@ watch([() => route.params.id, catalogRevision], load, { immediate: true })
             <article v-for="s in sessions" :key="s.id" class="panel">
               <h3>{{ date(s.startsAt) }} {{ time(s.startsAt) }}–{{ time(s.endsAt) }}</h3>
               <p>{{ s.teacher }} · {{ s.location }}<br>{{ s.address }}</p>
-              <div class="section-heading"><span>{{ s.isExtraSession ? '額外加開' : '固定課程' }} · {{ s.enrolled }} / {{ s.capacity }} 人</span><RouterLink v-if="s.enrolled < s.capacity" class="button small" :to="`/trial?session=${s.id}`">申請體驗</RouterLink><span v-else class="badge full">已額滿</span></div>
+              <div class="section-heading"><span>{{ s.isExtraSession ? '額外加開' : '固定課程' }} · {{ s.enrolled }} / {{ s.capacity }} 人</span><RouterLink v-if="enrollmentState?.state === 'Enrolled'" class="button small" :to="`/member/courses?course=${course.id}`">查看課表／請假</RouterLink><RouterLink v-else-if="s.enrolled < s.capacity" class="button small" :to="`/trial?session=${s.id}`">申請體驗</RouterLink><span v-else class="badge full">已額滿</span></div>
             </article>
             <p v-if="!sessions.length" class="empty">目前沒有後續公開場次。</p>
           </section>
         </div>
         <aside><div class="panel booking"><h2>開始你的練習</h2>
+          <p><strong>整期 {{ course.sessionCount }} 堂 · NT$ {{ money(course.termPrice) }}</strong></p>
+          <template v-if="enrollmentState">
+            <p class="notice">{{ enrollmentState.message }}</p>
+            <RouterLink v-if="enrollmentState.state === 'Enrolled'" class="button" :to="`/member/courses?course=${course.id}`">查看我的課程・請假</RouterLink>
+            <RouterLink v-else class="button" to="/member/enrollments">查看報名進度</RouterLink>
+          </template>
+          <p v-else-if="enrollmentError" class="notice">{{ enrollmentError }}</p>
+          <RouterLink v-else-if="course.canEnroll" class="button" :to="`/courses/${course.id}/enroll`">正式報名整期班 →</RouterLink>
+          <p v-else class="notice">{{ course.enrollmentUnavailableReason || '正式報名請聯繫工作室確認。' }}</p>
+          <p v-if="!enrollmentState || enrollmentState.state === 'Pending'" class="muted">申請不保留名額；確認收款並核准後才入班。</p>
+          <RouterLink to="/member/enrollments">查看我的報名進度</RouterLink>
           <template v-if="next">
             <p><CalendarDays :size="18"/>{{ date(next.startsAt) }}</p>
             <p>{{ time(next.startsAt) }}–{{ time(next.endsAt) }}</p>
             <p><UserRound :size="18"/>{{ next.teacher }} 老師</p>
             <p><MapPin :size="18"/>{{ next.location }}</p>
             <p>{{ next.address }}</p><span class="badge">{{ next.enrolled }} / {{ next.capacity }} 人</span>
-            <RouterLink v-if="next.enrolled < next.capacity" class="button" :to="`/trial?session=${next.id}`">申請體驗 →</RouterLink>
+            <RouterLink v-if="enrollmentState?.state !== 'Enrolled' && next.enrolled < next.capacity" class="button" :to="`/trial?session=${next.id}`">申請體驗 →</RouterLink>
           </template>
           <p v-else>目前沒有後續公開場次。</p>
           <RouterLink class="button outline" :to="`/schedule?course=${course.id}`">查看此課程課表</RouterLink>

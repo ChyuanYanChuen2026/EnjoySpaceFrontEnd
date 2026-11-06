@@ -8,6 +8,12 @@ import Schedule from './pages/Schedule.vue'
 import Trial from './pages/Trial.vue'
 import Login from './pages/Login.vue'
 import Member from './pages/Member.vue'
+import Enroll from './pages/Enroll.vue'
+import EnrollmentProgress from './pages/EnrollmentProgress.vue'
+import MyCourses from './pages/MyCourses.vue'
+import MyMakeup from './pages/MyMakeup.vue'
+import CheckIn from './pages/CheckIn.vue'
+import MyTrials from './pages/MyTrials.vue'
 import Studio from './pages/Studio.vue'
 import Plans from './pages/Plans.vue'
 import './style.css'
@@ -19,10 +25,16 @@ const router = createRouter({
     { path: '/', component: Home }, 
     { path: '/courses', component: Courses }, 
     { path: '/courses/:id', component: Course },
+    { path: '/courses/:id/enroll', component: Enroll },
     { path: '/schedule', component: Schedule }, 
     { path: '/trial', component: Trial }, 
     { path: '/login', component: Login },
     { path: '/member', component: Member }, 
+    { path: '/member/enrollments', component: EnrollmentProgress },
+    { path: '/member/courses', component: MyCourses },
+    { path: '/member/makeup', component: MyMakeup },
+    { path: '/member/trials', component: MyTrials },
+    { path: '/check-in', component: CheckIn },
     { path: '/studio', component: Studio },
     { path: '/plans', component: Plans },
     { path: '/:pathMatch(.*)*', redirect: '/' },

@@ -3,14 +3,18 @@ import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api, date, time, money, calendarDate, ApiError } from "../api";
 import { member, refreshMember, catalogRevision } from "../state";
+import MemberPage from "../components/MemberPage.vue";
+import MemberToolbar from "../components/MemberToolbar.vue";
 
 const router = useRouter(),
   data = ref({ sessions: [], requests: [], passes: [] }),
   error = ref(""),
   busy = ref(true);
 const status = {
-  Pending: "待聯繫",
+  Pending: "待審核",
   Contacted: "已聯繫",
+  Approved: "已核准",
+  Rejected: "已退回",
   Cancelled: "已取消",
 };
 
@@ -35,33 +39,14 @@ async function load() {
 }
 onMounted(load);
 watch(catalogRevision, load);
-async function logout() {
-  try {
-    await api("/logout", {});
-    requestVersion++;
-    data.value = { sessions: [], requests: [], passes: [] };
-    member.value = null;
-    router.push("/");
-  } catch (e) {
-    error.value = e.message;
-  }
-}
 </script>
 
 <template>
-  <section class="container section">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">YOUR PRACTICE</p>
-        <h1>{{ member?.displayName }}，歡迎回來</h1>
-        <p>{{ member?.roles.includes("Teacher") ? "在這裡查看你的授課行程。" : "在這裡，繼續你的練習旅程。" }}</p>
-      </div>
-      <button class="button outline" @click="logout">登出</button>
-    </div>
+  <MemberPage title="會員首頁" eyebrow="YOUR PRACTICE" :description="member?.roles.includes('Teacher') ? '在這裡查看你的授課行程。' : '在這裡，繼續你的練習旅程。'">
+    <MemberToolbar :title="member?.roles.includes('Teacher') ? '近期授課' : '近期上課'" :busy="busy" @refresh="load" />
     <p v-if="busy" role="status">讀取會員資料中…</p>
     <p v-if="error" class="notice error" role="alert">{{ error }}</p>
     <section class="panel">
-      <h2>{{ member?.roles.includes("Teacher") ? "我的授課行程" : "我的課程" }}</h2>
       <article class="member-row" v-for="s in data.sessions" :key="s.id">
         <div>
           <h3>{{ s.name }}</h3>
@@ -86,6 +71,7 @@ async function logout() {
     </section>
     <section class="panel">
       <h2>我的體驗申請</h2>
+      <RouterLink class="button outline" to="/member/trials">查看體驗進度與預約場次</RouterLink>
       <article class="member-row" v-for="r in data.requests" :key="r.id">
         <div>
           <h3>{{ r.name }}</h3>
@@ -97,5 +83,5 @@ async function logout() {
       </article>
       <p v-if="!busy && !data.requests.length" class="empty">還沒有體驗申請。<RouterLink to="/trial">探索第一堂練習 →</RouterLink></p>
     </section>
-  </section>
+  </MemberPage>
 </template>

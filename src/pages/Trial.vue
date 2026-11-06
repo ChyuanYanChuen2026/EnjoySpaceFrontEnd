@@ -1,10 +1,13 @@
 <script setup lang="js">
+import { chineseValidation as vChineseValidation } from "../chineseValidation";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import Hero from "../components/Hero.vue";
 import { api, date, time, money, validity, ApiError } from "../api";
 import { catalog, member, refreshMember, trialDraft, catalogRevision, loading as loadingCatalog } from "../state";
 import { trialApplicationIssue } from "../trialApplication.js";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../taiwanMobile";
+import { newRequestKey } from "../requestKey";
 import { CalendarDays, Clock3, UserRound, MapPin, CheckCircle2, LockKeyhole } from "lucide-vue-next";
 
 const route = useRoute();
@@ -17,22 +20,28 @@ const busy = ref(false);
 const loadingSessions = ref(true);
 const error = ref("");
 const success = ref("");
-const submissionKey = ref(draft?.submissionKey || crypto.randomUUID());
+const submissionKey = ref(draft?.submissionKey || newRequestKey());
 const form = ref({ name: "", phone: "", email: "", lineId: "", note: "", referrerName: "", ...draft?.form });
 const selected = computed(() => sessions.value.find((s) => s.id === sessionId.value));
 const plans = computed(() => catalog.value.plans.filter((p) => p.planType === "Trial" && p.audienceType === "TrialGuest"));
-const selectedPlan = computed(() => plans.value.find(p => p.id === planId.value));
-const applicationIssue = computed(() => trialApplicationIssue({
-  member: member.value, plans: plans.value, planId: planId.value,
-  session: selected.value, loading: loadingSessions.value || loadingCatalog.value, referrerName: form.value.referrerName,
-}));
+const selectedPlan = computed(() => plans.value.find((p) => p.id === planId.value));
+const applicationIssue = computed(() =>
+  trialApplicationIssue({
+    member: member.value,
+    plans: plans.value,
+    planId: planId.value,
+    session: selected.value,
+    loading: loadingSessions.value || loadingCatalog.value,
+    referrerName: form.value.referrerName,
+  }),
+);
 
 function saveDraft() {
   trialDraft.value = {
     form: { ...form.value },
     sessionId: sessionId.value,
     planId: planId.value,
-    submissionKey: submissionKey.value 
+    submissionKey: submissionKey.value,
   };
 }
 
@@ -91,8 +100,18 @@ watch(catalogRevision, () => {
 
 async function submit() {
   if (busy.value) return;
-  const issue = trialApplicationIssue({ member: member.value, plans: plans.value, planId: planId.value, session: selected.value, loading: loadingSessions.value || loadingCatalog.value, referrerName: form.value.referrerName });
-  if (issue) { error.value = issue; return; }
+  const issue = trialApplicationIssue({
+    member: member.value,
+    plans: plans.value,
+    planId: planId.value,
+    session: selected.value,
+    loading: loadingSessions.value || loadingCatalog.value,
+    referrerName: form.value.referrerName,
+  });
+  if (issue) {
+    error.value = issue;
+    return;
+  }
   if (!member.value) {
     login();
     return;
@@ -100,6 +119,7 @@ async function submit() {
   busy.value = true;
   error.value = "";
   try {
+    if (!isTaiwanMobile(form.value.phone)) throw new Error(TAIWAN_MOBILE_MESSAGE);
     const r = await api("/trial-requests", { ...form.value, sessionId: sessionId.value, planId: planId.value, submissionKey: submissionKey.value });
     success.value = (r.message || "體驗申請已送出，請至會員專區查看。") + (selectedPlan.value?.requiresReferrer ? " 免費體驗請直接聯繫工作室管理員登記安排上課。" : "");
     trialDraft.value = null;
@@ -120,18 +140,18 @@ async function submit() {
       <CheckCircle2 :size="48" />
       <h2>體驗申請已送出</h2>
       <p>{{ success }}</p>
-      <RouterLink class="button" to="/member">查看我的申請</RouterLink>
+      <RouterLink class="button" to="/member/trials">查看我的申請</RouterLink>
     </div>
-    <form v-else class="trial-grid" @submit.prevent="submit">
+    <form v-chinese-validation v-else class="trial-grid" @submit.prevent="submit">
       <div>
         <section class="panel">
           <h2>選擇你的課程</h2>
-          <p class="muted">先選一個希望上的場次，實際上課時間與其餘堂數由工作室聯繫安排。</p>
+          <p class="muted">先選一個希望上的場次。方案核准並確認收款後，可在「我的體驗課」選擇單堂或多堂預約，再由工作室逐堂審核；免費介紹體驗由管理員安排。</p>
           <p v-if="loadingSessions" role="status">讀取場次中…</p>
           <p v-else-if="!sessions.length" class="empty">目前沒有開放的近期場次。</p>
           <label
             >上課場次
-            <select v-model="sessionId" required>
+            <select v-model="sessionId" data-validation-label="上課場次" data-empty-value="0" required>
               <option :value="0" disabled>請選擇場次</option>
               <option v-for="s in sessions" :key="s.id" :value="s.id" :disabled="s.enrolled >= s.capacity">{{ date(s.startsAt) }} {{ time(s.startsAt) }} · {{ s.name }}{{ s.enrolled >= s.capacity ? "（額滿）" : "" }}</option>
             </select>
@@ -148,7 +168,7 @@ async function submit() {
         <section class="panel">
           <h2>選擇體驗方案</h2>
           <label v-for="p in plans" :key="p.id" class="plan-option" :class="{ checked: planId === p.id }">
-            <input type="radio" v-model="planId" :value="p.id" required name="plan" />
+            <input type="radio" data-validation-label="體驗方案" v-model="planId" :value="p.id" required name="plan" />
             <span>
               <strong>{{ p.name }}</strong>
               <b>{{ p.sessionQuota }} 堂 · NT$ {{ money(p.price) }}</b>
@@ -161,16 +181,25 @@ async function submit() {
       </div>
       <section class="panel">
         <h2>填寫申請資料</h2>
-        <label v-if="selectedPlan?.requiresReferrer">介紹人姓名 *<input v-model="form.referrerName" required maxlength="100" placeholder="請填寫介紹您的舊生姓名" />
+        <label v-if="selectedPlan?.requiresReferrer"
+          >介紹人姓名 *<input name="referrerName" data-validation-label="介紹人姓名" v-model="form.referrerName" required maxlength="100" placeholder="請填寫介紹您的舊生姓名" />
           <small>送出介紹資料後，請直接聯繫工作室管理員核對、登記並安排免費體驗課。</small>
         </label>
-        <p v-if="!member" class="notice">送出前請先 <RouterLink :to="{ path: '/login', query: { redirect: route.fullPath } }">登入或註冊學生帳號</RouterLink>，即可追蹤申請。</p>
-        <label>姓名 *<input v-model="form.name" autocomplete="name" required maxlength="100" /></label>
-        <label>電話 *<input v-model="form.phone" autocomplete="tel" type="tel" required maxlength="30" /></label>
-        <label>Email *<input v-model="form.email" autocomplete="email" type="email" required maxlength="200" /></label>
-        <label>LINE ID<input v-model="form.lineId" maxlength="100" placeholder="選填" /></label>
+        <p v-if="!member" class="notice">體驗申請須先成為學生會員，請先 <RouterLink :to="{ path: '/login', query: { redirect: route.fullPath } }">登入或註冊學生帳號</RouterLink>。註冊會員不代表已正式報名課程。</p>
+        <label>帳號
+          <input name="account" :value="member?.account || ''" readonly class="account-readonly" placeholder="登入後自動帶入帳號" aria-describedby="trial-account-hint" />
+          <small id="trial-account-hint">使用目前登入的會員帳號，無法修改。</small>
+        </label>
+        <label>姓名 *<input name="name" data-validation-label="姓名" v-model="form.name" autocomplete="name" required maxlength="100" /></label>
+        <label>手機 *
+          <input name="phone" data-validation-label="手機" v-model="form.phone" autocomplete="tel" type="tel" inputmode="numeric" required maxlength="10" minlength="10"
+            :pattern="TAIWAN_MOBILE_PATTERN" :data-pattern-message="TAIWAN_MOBILE_MESSAGE" aria-describedby="trial-mobile-hint" />
+          <small id="trial-mobile-hint">請輸入 09 開頭的 10 碼手機號碼，例如 0912345678，不含空格或符號。</small>
+        </label>
+        <label>電子郵件 *<input name="email" data-validation-label="電子郵件" v-model="form.email" autocomplete="email" type="email" required maxlength="200" /></label>
+        <label>LINE ID<input name="lineId" data-validation-label="LINE ID" v-model="form.lineId" maxlength="100" placeholder="選填" /></label>
         <label>備註
-          <textarea v-model="form.note" rows="4" maxlength="300" placeholder="有任何想告訴我們的事嗎？（選填）"></textarea>
+          <textarea name="note" data-validation-label="備註" v-model="form.note" rows="4" maxlength="300" placeholder="有任何想告訴我們的事嗎？（選填）"></textarea>
           <small>{{ form.note.length }} / 300</small>
         </label>
         <p class="muted">申請送出後，待工作室人工審核、聯繫確認並安排登記上課。申請不代表完成預約，也不會立即保留名額。</p>
@@ -183,3 +212,9 @@ async function submit() {
     </form>
   </section>
 </template>
+
+<style scoped>
+.account-readonly {
+  background: var(--pale);
+}
+</style>

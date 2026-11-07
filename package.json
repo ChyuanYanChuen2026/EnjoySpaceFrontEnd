@@ -4,17 +4,24 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "build:cloudflare": "vite build --mode cloudflare",
+    "preview:cloudflare": "vite preview --mode cloudflare --host 127.0.0.1 --port 4174",
+    "check:cloudflare": "npm run build:cloudflare && wrangler deploy --dry-run",
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
+    "axios": "^1.20.0",
+    "lucide-vue-next": "^0.468.0",
     "vue": "^3.5.22",
-    "vue-router": "^4.6.3",
-    "lucide-vue-next": "^0.468.0"
+    "vue-router": "^4.6.3"
   },
   "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.67.0",
     "@vitejs/plugin-vue": "^6.0.1",
-    "vite": "^7.1.9"
+    "vite": "^7.1.9",
+    "wrangler": "4.156.1"
   }
 }

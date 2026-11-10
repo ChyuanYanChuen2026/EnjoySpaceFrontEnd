@@ -1,4 +1,5 @@
 <script setup>
+import { chineseValidation as vChineseValidation, scheduleDateRangeIssue } from '../chineseValidation'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { CalendarDays, List, MapPin, SlidersHorizontal, UserRound } from 'lucide-vue-next'
@@ -60,6 +61,8 @@ let requestVersion = 0
 async function load() {
   const version = ++requestVersion
   const range = appliedRange.value
+  const issue = scheduleDateRangeIssue(range.from, range.until)
+  if (issue) { error.value = issue; busy.value = false; return }
   const start = range.from + 'T00:00:00+08:00'
   // The UI includes the final date; the API excludes the upper bound.
   const end = new Date(Date.parse(range.until + 'T00:00:00+08:00') + 86400000)
@@ -91,6 +94,8 @@ function applyRange(range, displayMonth) {
   load()
 }
 function search() {
+  const issue = scheduleDateRangeIssue(from.value, until.value)
+  if (issue) { error.value = issue; return }
   applyRange({ from: from.value, until: until.value }, from.value.slice(0, 7))
 }
 function openDatePicker(event) {
@@ -135,12 +140,12 @@ watch(() => route.query.course, value => { courseId.value = Number(value) || '' 
 <template>
   <Hero title="公開課表" subtitle="探索適合你的練習時光" />
   <section class="container section">
-    <form class="filters" @submit.prevent="search"><label>學期<select v-model="termId"><option value="">全部學期</option><option v-for="term in catalog.terms" :key="term.id" :value="term.id">{{ term.name }}</option></select></label><label>課程<select v-model="courseId"><option value="">全部課程</option><option v-for="c in catalog.courses" :key="c.id" :value="c.id">{{ c.name }} · {{ c.termName }}</option></select></label>
+    <form v-chinese-validation class="filters" @submit.prevent="search"><label>學期<select v-model="termId"><option value="">全部學期</option><option v-for="term in catalog.terms" :key="term.id" :value="term.id">{{ term.name }}</option></select></label><label>課程<select v-model="courseId"><option value="">全部課程</option><option v-for="c in catalog.courses" :key="c.id" :value="c.id">{{ c.name }} · {{ c.termName }}</option></select></label>
       <label>開始日期
-        <input type="date" v-model="from" required @click="openDatePicker">
+        <input type="date" data-validation-label="開始日期" v-model="from" required @click="openDatePicker">
       </label>
       <label>結束日期
-        <input type="date" v-model="until" :min="from" required @click="openDatePicker">
+        <input type="date" data-validation-label="結束日期" v-model="until" :min="from" required @click="openDatePicker">
       </label>
       <label>課程類型<select
           v-model="category">

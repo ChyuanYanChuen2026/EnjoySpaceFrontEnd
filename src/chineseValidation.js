@@ -1,5 +1,50 @@
-// Only attached to registration and trial forms; native validation bubbles use
-// these messages even when the browser's interface language is English.
+import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE } from './validationErrors.js';
+
+// 表單送出前再次檢查文字；不改寫手機或密碼，也不取代後端驗證。
+function textIssue(value, label, max, required = true) {
+  if (typeof value !== 'string') return `請確認${label}的格式與內容。`;
+  if (required && !value.trim()) return `請填寫${label}。`;
+  return value.length > max ? `${label}不可超過 ${max} 個字元。` : '';
+}
+
+export function trialContactIssue(form) {
+  const issue = textIssue(form.name, '姓名', 100)
+    || textIssue(form.email, '電子郵件', 200)
+    || textIssue(form.lineId ?? '', 'LINE ID', 100, false)
+    || textIssue(form.note ?? '', '備註', 300, false)
+    || textIssue(form.referrerName ?? '', '介紹人姓名', 100, false);
+  if (issue) return issue;
+  if (!isTaiwanMobile(form.phone)) return TAIWAN_MOBILE_MESSAGE;
+  // HTML email input 另有瀏覽器格式驗證；這裡也阻擋程式帶入的空白／多個 @。
+  if (!/^[^\s@]+@[^\s@]+$/u.test(form.email)) return '請輸入正確的電子郵件格式，例如 name@example.com。';
+  return '';
+}
+
+export function loginFormIssue(form, registering = false) {
+  const issue = textIssue(form.account, '帳號', 100) || textIssue(form.password, '密碼', 200);
+  if (issue || !registering) return issue;
+  if (form.password.length < 10) return '密碼至少需要 10 個字元。';
+  const confirmationIssue = textIssue(form.confirmPassword, '確認密碼', 200);
+  if (confirmationIssue) return confirmationIssue;
+  if (form.password !== form.confirmPassword) return '兩次輸入的密碼不一致，請重新確認。';
+  return trialContactIssue(form);
+}
+
+export function scheduleDateRangeIssue(from, until) {
+  const parseDay = value => {
+    if (typeof value !== 'string' || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) || value.startsWith('0000')) return NaN;
+    const timestamp = Date.parse(`${value}T00:00:00Z`);
+    return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value ? timestamp : NaN;
+  };
+  const start = parseDay(from), end = parseDay(until);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return '請填寫有效的開始日期與結束日期。';
+  if (end < start) return '結束日期不可早於開始日期。';
+  // 結束日期為包含當日；後端使用不包含的次日零時，最多 93 天。
+  if ((end - start) / 86400000 + 1 > 93) return '查詢日期範圍須在 93 天內（含起訖日期）。';
+  return '';
+}
+
+// Attach locally to each form, including when the browser interface is English.
 export function fieldValidationMessage(field) {
   if (!field.willValidate) return '';
   const label = field.dataset.validationLabel || '此欄位';

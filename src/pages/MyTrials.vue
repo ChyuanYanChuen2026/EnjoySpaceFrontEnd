@@ -7,6 +7,7 @@ import MemberPage from '../components/MemberPage.vue';
 import MemberToolbar from '../components/MemberToolbar.vue';
 import TrialBookingPicker from '../components/TrialBookingPicker.vue';
 import { newRequestKey } from '../requestKey';
+import { trialBookingIssue } from '../trialApplication.js';
 const router = useRouter(), items = ref([]), busy = ref(false), error = ref(''), notice = ref(''), selected = ref(null), options = ref(null), choices = ref([0]), batch = ref(''), modal = ref(null), modalText = ref('');
 const labels = { Pending:'待審核', Contacted:'已聯繫，等待審核', Approved:'已核准', Rejected:'已退回', Cancelled:'已取消' };
 const attendance = { Scheduled:'尚未打卡', Present:'出席', Late:'遲到', Absent:'缺席' };
@@ -18,6 +19,7 @@ async function load() {
   finally { busy.value = false; }
 }
 async function choose(item) {
+  if (busy.value) return;
   busy.value = true; options.value = null; selected.value = null;
   try { options.value = await api(`/my-trials/${item.id}/options`); selected.value = item; choices.value = [0]; batch.value = newRequestKey(); }
   catch(e) { await showError(e.message); } finally { busy.value = false; }
@@ -25,9 +27,9 @@ async function choose(item) {
 watch(choices, () => { batch.value = newRequestKey(); }, {deep:true});
 async function book() {
   if(busy.value) return;
-  const missing = choices.value.findIndex(id => !id);
-  if(missing >= 0) return showError(`請選擇第 ${missing + 1} 堂的日期與上課場次。`);
-  if(new Set(choices.value).size !== choices.value.length) return showError('重複選擇同一堂課，請調整後再送出。');
+  if (!selected.value) return showError('請先選擇體驗方案。');
+  const issue = trialBookingIssue({ choices: choices.value, options: options.value });
+  if (issue) return showError(issue);
   busy.value = true;
   try { notice.value = (await api(`/my-trials/${selected.value.id}/bookings`, { rowVersion: options.value.rowVersion, batchKey: batch.value, sessionIds: choices.value })).message; selected.value = null; await load(); }
   catch(e) { await showError(e.message + (e.status === 0 || e.status >= 500 ? ' 請先更新紀錄確認是否送出成功；保留原選擇再次送出不會建立重複預約。' : '')); }
@@ -35,7 +37,9 @@ async function book() {
 }
 const cancelTarget = ref(null), cancelReason = ref('');
 async function cancel() {
-  if(busy.value) return; busy.value = true;
+  if (busy.value || !cancelTarget.value) return;
+  if (!cancelReason.value.trim() || cancelReason.value.length > 500) return showError('請填寫取消原因，最多 500 字。');
+  busy.value = true;
   try { notice.value = (await api(`/my-trials/bookings/${cancelTarget.value.id}/cancel`, { rowVersion: cancelTarget.value.rowVersion, reason: cancelReason.value })).message; cancelTarget.value = null; await load(); }
   catch(e) { await showError(e.message); } finally { busy.value = false; }
 }

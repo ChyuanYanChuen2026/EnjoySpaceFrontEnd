@@ -65,8 +65,6 @@ typings/
 **/.env.local
 **/appsettings.Development.json
 **/docs
-**/tests
-/tests
 /*.png
 /artifacts/
 /tmp/

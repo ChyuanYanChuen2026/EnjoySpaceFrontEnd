@@ -1,12 +1,12 @@
 <script setup lang="js">
-import { chineseValidation as vChineseValidation } from "../chineseValidation";
+import { chineseValidation as vChineseValidation, trialContactIssue } from "../chineseValidation";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import Hero from "../components/Hero.vue";
 import { api, date, time, money, validity, ApiError } from "../api";
 import { catalog, member, refreshMember, trialDraft, catalogRevision, loading as loadingCatalog } from "../state";
 import { trialApplicationIssue } from "../trialApplication.js";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../validationErrors.js";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../validationErrors.js";
 import { newRequestKey } from "../requestKey";
 import { CalendarDays, Clock3, UserRound, MapPin, CheckCircle2, LockKeyhole } from "lucide-vue-next";
 
@@ -119,7 +119,8 @@ async function submit() {
   busy.value = true;
   error.value = "";
   try {
-    if (!isTaiwanMobile(form.value.phone)) throw new Error(TAIWAN_MOBILE_MESSAGE);
+    const contactIssue = trialContactIssue(form.value);
+    if (contactIssue) throw new Error(contactIssue);
     const r = await api("/trial-requests", { ...form.value, sessionId: sessionId.value, planId: planId.value, submissionKey: submissionKey.value });
     success.value = (r.message || "體驗申請已送出，請至會員專區查看。") + (selectedPlan.value?.requiresReferrer ? " 免費體驗請直接聯繫工作室管理員登記安排上課。" : "");
     trialDraft.value = null;

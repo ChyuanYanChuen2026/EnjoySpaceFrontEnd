@@ -1,4 +1,5 @@
 <script setup>
+import { chineseValidation as vChineseValidation } from '../chineseValidation'
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, date, time } from '../api'
@@ -57,6 +58,7 @@ async function submit() {
   if (!selection.value || saving.value || busy.value || needsRefresh.value) return
   const { session: s, action } = selection.value
   if (action === 'leave' ? !canLeave(s) || !reason.value.trim() : !canCancel(s)) return
+  if (action === 'leave' && reason.value.length > 500) { error.value = '請假原因最多 500 字。'; return }
   saving.value = true; error.value = ''; success.value = ''
   try {
     const result = action === 'leave'
@@ -102,10 +104,10 @@ watch(() => route.query.course, () => { if (!saving.value) { selection.value = n
           <button v-else-if="canCancel(s)" class="button outline" :disabled="busy || saving || needsRefresh" @click="open(s, 'cancel')">取消請假</button>
           <p v-else class="muted">{{ unavailable(s) }}</p>
         </div>
-        <form v-else class="leave-form" @submit.prevent="submit">
+        <form v-chinese-validation v-else class="leave-form" @submit.prevent="submit">
           <template v-if="selection.action === 'leave'">
             <label :for="`reason-${s.id}`">請假原因（必填）</label>
-            <textarea :id="`reason-${s.id}`" v-model="reason" maxlength="500" rows="3" required :disabled="saving || needsRefresh" placeholder="請簡述這堂課需要請假的原因"></textarea>
+            <textarea :id="`reason-${s.id}`" data-validation-label="請假原因" v-model="reason" maxlength="500" rows="3" required :disabled="saving || needsRefresh" placeholder="請簡述這堂課需要請假的原因"></textarea>
             <small>{{ reason.length }} / 500</small><p>送出後即完成這堂課的請假，可至「我的補課」選擇補課時間。</p>
           </template>
           <p v-else>確定取消 {{ date(s.startsAt) }} {{ time(s.startsAt) }} 的請假嗎？您將恢復原堂上課安排，這次請假產生的補課資格也會撤銷。</p>

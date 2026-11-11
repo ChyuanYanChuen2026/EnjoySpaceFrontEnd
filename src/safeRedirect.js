@@ -1,5 +1,5 @@
 const portalOrigin = 'https://portal.invalid';
-const knownPath = /^(?:\/(?:courses(?:\/[1-9][0-9]*(?:\/enroll)?)?|schedule|trial|check-in|studio|plans)|\/member(?:\/(?:enrollments|courses|makeup|trials))?|\/)$/;
+const knownPath = /^(?:\/(?:courses(?:\/[1-9][0-9]*(?:\/enroll)?)?|schedule|trial|check-in|studio|plans)|\/member(?:\/(?:enrollments|courses|makeup|trials|profile))?|\/)$/;
 
 // 登入後只返回已知的站內頁；保留 QR token 與報名／體驗的查詢參數。
 export function safeRedirect(value) {

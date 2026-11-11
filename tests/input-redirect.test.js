@@ -4,7 +4,7 @@ import { safeRedirect } from '../src/safeRedirect.js';
 
 test('保留課程、會員、體驗與打卡的站內目的地和查詢／片段', () => {
   for (const path of ['/member', '/member/courses?course=12', '/member/makeup?request=3',
-    '/member/enrollments?application=4', '/member/trials', '/trial?session=1&plan=2',
+    '/member/enrollments?application=4', '/member/trials', '/member/profile', '/trial?session=1&plan=2',
     '/check-in?token=abc%2Bdef%2Fghi%3D', '/courses/12/enroll#details', '/', '/schedule']) {
     assert.equal(safeRedirect(path), path);
   }

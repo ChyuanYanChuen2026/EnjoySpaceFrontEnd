@@ -8,6 +8,7 @@ import Schedule from './pages/Schedule.vue'
 import Trial from './pages/Trial.vue'
 import Login from './pages/Login.vue'
 import Member from './pages/Member.vue'
+import Profile from './pages/Profile.vue'
 import Enroll from './pages/Enroll.vue'
 import EnrollmentProgress from './pages/EnrollmentProgress.vue'
 import MyCourses from './pages/MyCourses.vue'
@@ -30,6 +31,7 @@ const router = createRouter({
     { path: '/trial', component: Trial }, 
     { path: '/login', component: Login },
     { path: '/member', component: Member }, 
+    { path: '/member/profile', component: Profile },
     { path: '/member/enrollments', component: EnrollmentProgress },
     { path: '/member/courses', component: MyCourses },
     { path: '/member/makeup', component: MyMakeup },

@@ -1,11 +1,12 @@
 <script setup lang="js">
-import { chineseValidation as vChineseValidation } from '../chineseValidation';
+import { chineseValidation as vChineseValidation, loginFormIssue } from '../chineseValidation';
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "../api";
-import { refreshMember } from "../state";
+import { refreshMember, memberError } from "../state";
 import { Flower2 } from "lucide-vue-next";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE, isTaiwanMobile } from "../validationErrors.js";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../validationErrors.js";
+import { safeRedirect } from '../safeRedirect.js';
 
 const router = useRouter(),
   route = useRoute(),
@@ -15,20 +16,21 @@ const router = useRouter(),
   notice = ref("");
 const form = ref({ account: "", password: "", confirmPassword: "", name: "", email: "", phone: "" });
 async function submit() {
+  if (busy.value) return;
+  notice.value = "";
+  const issue = loginFormIssue(form.value, register.value);
+  if (issue) { error.value = issue; return; }
   busy.value = true;
   error.value = "";
-  notice.value = "";
   try {
     if (register.value) {
-      if (!isTaiwanMobile(form.value.phone)) throw new Error(TAIWAN_MOBILE_MESSAGE);
       await api("/register", form.value);
       register.value = false;
       notice.value = "學生帳號已建立，請登入。";
     } else {
       await api("/login", { account: form.value.account, password: form.value.password });
-      await refreshMember();
-      const target = String(route.query.redirect || "/member");
-      await router.push(target.startsWith("/") && !target.startsWith("//") ? target : "/member");
+      if (!await refreshMember()) throw new Error(memberError.value || '目前無法確認登入狀態，請重新確認。');
+      await router.push(safeRedirect(route.query.redirect));
     }
   } catch (e) {
     error.value = e.message;
@@ -74,7 +76,7 @@ async function submit() {
         <p v-if="notice" class="notice" role="status">{{ notice }}</p>
         <button class="button" :disabled="busy">{{ busy ? "處理中…" : register ? "建立學生帳號" : "登入" }}</button>
       </form>
-      <button class="text-button" @click="register = !register; error = '';">
+      <button class="text-button" :disabled="busy" @click="register = !register; error = '';">
         {{ register ? "已有帳號？返回登入" : "第一次來？註冊學生帳號" }}
       </button>
     </div>

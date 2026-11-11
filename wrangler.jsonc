@@ -1,17 +1,14 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "enjoyspace-portal",
+  "name": "enjoyspacefrontend",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-06",
   "assets": {
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
-    // API 必須交給 Worker 處理，不能誤回傳 Vue 的 index.html。
     "run_worker_first": ["/api", "/api/*"]
   },
   "vars": {
-    // 待後台主機建立後填入 HTTPS origin（例如 https://你的後台.azurewebsites.net）。
-    // 此處只放網址；資料庫連線字串、密碼及 Token 不可放在這裡。
-    "API_ORIGIN": ""
+    "API_ORIGIN": "https://app-enjoyspace-prod-heeghtdcbte9hyd8.eastasia-01.azurewebsites.net"
   }
 }

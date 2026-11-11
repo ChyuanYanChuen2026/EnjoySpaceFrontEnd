@@ -48,7 +48,7 @@ function chooseMode(isMultiple) {
 }
 
 function addChoice() {
-  if (choices.value.length >= props.options.remaining) return
+  if (props.busy || choices.value.length >= Math.min(props.options.remaining, 20)) return
   const updated = [...choices.value, 0]
   choices.value = updated
   edit(updated.length - 1, updated)
@@ -107,7 +107,7 @@ function selectSession(event) {
           :aria-label="`移除第 ${index + 1} 堂`" :disabled="busy" @click="removeChoice(index)">移除</button>
       </li>
     </ol>
-    <button v-if="multiple && choices.length < options.remaining" type="button" class="button outline small"
+    <button v-if="multiple && choices.length < Math.min(options.remaining, 20)" type="button" class="button outline small"
       :disabled="busy" @click="addChoice">＋ 再預約一堂</button>
 
     <div class="picker-layout">

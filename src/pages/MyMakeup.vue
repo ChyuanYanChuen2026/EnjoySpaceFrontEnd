@@ -1,4 +1,5 @@
 <script setup>
+import { chineseValidation as vChineseValidation } from '../chineseValidation'
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, date, time, calendarDate } from '../api'
@@ -64,6 +65,7 @@ async function submit() {
   const current = revision, selectedAction = action.value
   const request = data.value.requests.find(r => r.id === selectedAction.id)
   if (selectedAction.type === 'apply' ? !selectedTarget.value || !options.value : !request || !canCancel(request) || !reason.value.trim()) return
+  if (selectedAction.type === 'cancel' && reason.value.length > 500) { error.value = '取消原因最多 500 字。'; return }
   saving.value = true; error.value = ''; success.value = ''
   try {
     const result = selectedAction.type === 'apply'
@@ -103,13 +105,13 @@ watch([dayFilter, courseFilter], () => { targetId.value = '' })
           <button v-if="canApply(e)" class="button" :disabled="disabled" @click="choose(e)">選擇補課時間</button>
           <p v-else class="muted">{{ e.unavailableReason || '這筆補課資格的可用期間已結束，請聯繫工作室。' }}</p>
         </template>
-        <form v-else class="makeup-form" @submit.prevent="submit">
+        <form v-chinese-validation v-else class="makeup-form" @submit.prevent="submit">
           <p v-if="loadingOptions" role="status">正在查詢可選場次…</p>
           <template v-if="options">
             <p>可選擇上述期間內其他開放補課的課程，不限同一學期。</p>
             <div class="makeup-filters"><label>日期<select v-model="dayFilter" :disabled="saving"><option value="">全部日期</option><option v-for="day in days" :key="day">{{ day }}</option></select></label><label>課程<select v-model="courseFilter" :disabled="saving"><option value="">全部課程</option><option v-for="[id, name] in targetCourses" :key="id" :value="id">{{ name }}</option></select></label></div>
             <fieldset :disabled="disabled"><legend>選擇一個補課場次</legend>
-              <label v-for="s in targets" :key="s.id" class="makeup-option"><input type="radio" name="makeup-session" :value="s.id" v-model="targetId" required /><span><strong>{{ s.courseName }}</strong><span>{{ date(s.startsAt) }} {{ time(s.startsAt) }}–{{ time(s.endsAt) }}</span><span>{{ s.teacher }} · {{ s.location }}</span><small>目前剩餘 {{ s.remaining }} 位，名額依審核時為準</small></span></label>
+              <label v-for="s in targets" :key="s.id" class="makeup-option"><input type="radio" name="makeup-session" data-validation-label="補課場次" :value="s.id" v-model="targetId" required /><span><strong>{{ s.courseName }}</strong><span>{{ date(s.startsAt) }} {{ time(s.startsAt) }}–{{ time(s.endsAt) }}</span><span>{{ s.teacher }} · {{ s.location }}</span><small>目前剩餘 {{ s.remaining }} 位，名額依審核時為準</small></span></label>
             </fieldset>
             <p v-if="!targets.length" class="notice">{{ options.targets.length ? '目前篩選條件下沒有可選場次，請調整日期或課程。' : '目前沒有符合資格的補課場次。請稍後重新查詢，或聯繫工作室協助安排。' }}</p>
             <p v-if="selectedTarget" class="notice">您選擇了「{{ selectedTarget.courseName }}」{{ date(selectedTarget.startsAt) }} {{ time(selectedTarget.startsAt) }}。送出後請等候工作室審核。</p>
@@ -136,9 +138,9 @@ watch([dayFilter, courseFilter], () => { targetId.value = '' })
           <button v-if="canCancel(r)" class="button outline" :disabled="disabled" @click="cancel(r)">{{ r.status === 'Pending' ? '取消申請' : '取消補課' }}</button>
           <p v-else-if="r.status === 'Approved'" class="muted">{{ r.cancelUnavailableReason || '這堂補課已開始，請聯繫工作室。' }}</p>
         </div>
-        <form v-else class="makeup-form" @submit.prevent="submit">
+        <form v-chinese-validation v-else class="makeup-form" @submit.prevent="submit">
           <p>確定取消這筆{{ r.status === 'Pending' ? '補課申請' : '已核准補課' }}嗎？取消後可在資格有效期間內重新選擇場次；已核准的上課安排也會一併取消。</p>
-          <label :for="`cancel-makeup-${r.id}`">取消原因（必填）</label><textarea :id="`cancel-makeup-${r.id}`" v-model="reason" maxlength="500" rows="3" required :disabled="disabled"></textarea><small>{{ reason.length }} / 500</small>
+          <label :for="`cancel-makeup-${r.id}`">取消原因（必填）</label><textarea :id="`cancel-makeup-${r.id}`" data-validation-label="取消原因" v-model="reason" maxlength="500" rows="3" required :disabled="disabled"></textarea><small>{{ reason.length }} / 500</small>
           <p v-if="!canCancel(r)" class="notice">目前已無法自行取消，請重新整理或聯繫工作室。</p>
           <div class="actions"><button class="button" :disabled="disabled || !reason.trim() || !canCancel(r)">{{ saving ? '處理中…' : '確認取消補課' }}</button><button type="button" class="button outline" :disabled="saving" @click="close">保留補課安排</button></div>
         </form>

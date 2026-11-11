@@ -1,4 +1,5 @@
 <script setup>
+import { chineseValidation as vChineseValidation } from '../chineseValidation'
 import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, date, time, money } from '../api'
@@ -24,6 +25,7 @@ async function load() {
 }
 async function submit() {
   if (saving.value || busy.value || !preview.value || !confirmDetails.value || !confirmPolicy.value || !paymentMethod.value || uncertain.value) return
+  if (!['Cash', 'Transfer'].includes(paymentMethod.value)) { error.value = '請選擇有效的預計付款方式。'; return }
   const current = revision
   saving.value = true; error.value = ''
   try {
@@ -78,7 +80,7 @@ watch(() => route.params.id, load, { immediate: true })
       <p>選擇轉帳者請先等候工作室通知，勿自行匯款。</p>
       <RouterLink class="button" :to="`/member/enrollments?application=${submittedId}`">查看報名進度 →</RouterLink>
     </section>
-    <form v-else-if="preview" @submit.prevent="submit" class="enrollment-grid">
+    <form v-chinese-validation v-else-if="preview" @submit.prevent="submit" class="enrollment-grid">
       <section class="panel"><p class="eyebrow">FULL TERM</p><h2>{{ preview.courseName }}</h2><p>{{ preview.termName }}</p>
         <p>報名學生：{{ preview.studentName }}（{{ preview.studentAccount }}）</p>
         <h3>完整課表 · {{ preview.sessions.length }} 堂</h3>
@@ -87,11 +89,11 @@ watch(() => route.params.id, load, { immediate: true })
       <section class="panel enrollment-summary"><h2>確認報名資料</h2>
         <p class="enrollment-total">NT$ {{ money(preview.amount) }} <small>／整期 {{ preview.sessions.length }} 堂</small></p>
         <fieldset :disabled="saving || uncertain"><legend>預計付款方式（必選）</legend>
-          <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Cash" name="paymentMethod" required /><span><strong>現場現金</strong><small>依工作室通知，到現場繳費。</small></span></label>
-          <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Transfer" name="paymentMethod" required /><span><strong>銀行轉帳</strong><small>等候確認名額及付款通知，請勿先行匯款。</small></span></label>
+          <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Cash" name="paymentMethod" data-validation-label="預計付款方式" required /><span><strong>現場現金</strong><small>依工作室通知，到現場繳費。</small></span></label>
+          <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Transfer" name="paymentMethod" data-validation-label="預計付款方式" required /><span><strong>銀行轉帳</strong><small>等候確認名額及付款通知，請勿先行匯款。</small></span></label>
           <div class="notice">送出申請不代表付款成功或保留名額。工作室確認收款並核准後，才會加入正式上課名單。</div>
-          <label class="enrollment-check"><input v-model="confirmDetails" type="checkbox" required /><span>我已核對整期課表、堂數與金額，並了解申請尚未保留名額。</span></label>
-          <label class="enrollment-check"><input v-model="confirmPolicy" type="checkbox" required /><span>我已閱讀並確認：{{ policy }}</span></label>
+          <label class="enrollment-check"><input v-model="confirmDetails" type="checkbox" data-validation-label="課表與金額確認" required /><span>我已核對整期課表、堂數與金額，並了解申請尚未保留名額。</span></label>
+          <label class="enrollment-check"><input v-model="confirmPolicy" type="checkbox" data-validation-label="報名規則確認" required /><span>我已閱讀並確認：{{ policy }}</span></label>
           <button class="button enrollment-submit" :disabled="!confirmDetails || !confirmPolicy || !paymentMethod || saving || uncertain">{{ saving ? '送出中…' : '送出正式報名申請' }}</button>
         </fieldset>
         <p class="muted">本頁不會執行線上付款。報名資料以後台確認為準；中途插班請聯繫工作室。</p>

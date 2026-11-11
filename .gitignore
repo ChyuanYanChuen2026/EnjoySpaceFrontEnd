@@ -56,3 +56,21 @@ typings/
 
 # dotenv environment variables file
 .env
+
+# 專案建置產物、暫存與本機設定
+**/bin/
+**/obj/
+**/dist/
+.tools/
+**/.env.local
+**/appsettings.Development.json
+**/docs
+/*.png
+/artifacts/
+/tmp/
+/tests/
+/dist-cloudflare/
+/.wrangler/
+/.dev.vars*
+/.env.production*
+

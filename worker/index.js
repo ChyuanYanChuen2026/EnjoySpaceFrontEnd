@@ -3,17 +3,25 @@ const requestHeaderNames = [
   'origin', 'referer', 'x-csrf-token', 'x-requested-with',
 ];
 
+function protectApiResponse(response) {
+  response.headers.set('Cache-Control', 'no-store, private');
+  response.headers.set('CDN-Cache-Control', 'no-store');
+  response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('Content-Security-Policy', "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'");
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Strict-Transport-Security', 'max-age=15552000');
+  response.headers.delete('Server');
+  response.headers.delete('X-Powered-By');
+  return response;
+}
+
 function apiError(status, message) {
-  return new Response(JSON.stringify({ message }), {
+  return protectApiResponse(new Response(JSON.stringify({ message }), {
     status,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store, private',
-      'CDN-Cache-Control': 'no-store',
-      'Cloudflare-CDN-Cache-Control': 'no-store',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  });
+    headers: { 'Content-Type': 'application/json; charset=utf-8' },
+  }));
 }
 
 function backendOrigin(value, portalOrigin) {
@@ -42,6 +50,11 @@ export async function handleRequest(request, env, fetchUpstream = fetch) {
   if (!/^\/api\/portal(?:\/[A-Za-z0-9_-]+)*\/?$/.test(incoming.pathname)) {
     return apiError(404, '找不到此服務，請重新整理頁面後再試。');
   }
+  if (!['GET', 'HEAD', 'POST'].includes(request.method)) {
+    const response = apiError(405, '此服務不支援這個操作方式，請重新整理頁面後再試。');
+    response.headers.set('Allow', 'GET, HEAD, POST');
+    return response;
+  }
 
   const origin = backendOrigin(env.API_ORIGIN, incoming.origin);
   if (!origin) return apiError(503, '網站服務尚未完成設定，請稍後再試。');
@@ -57,6 +70,8 @@ export async function handleRequest(request, env, fetchUpstream = fetch) {
   }
   headers.set('Cache-Control', 'no-store');
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
   try {
     const upstream = await fetchUpstream(target.href, {
       method: request.method,
@@ -65,25 +80,45 @@ export async function handleRequest(request, env, fetchUpstream = fetch) {
       duplex: 'half',
       redirect: 'manual',
       cache: 'no-store',
+      signal: controller.signal,
       cf: { cacheEverything: false, cacheTtlByStatus: { '100-599': -1 } },
     });
     // API 不追隨轉址，避免把 Cookie 與防偽 Token 送到轉址目的地。
-    if (upstream.status >= 300 && upstream.status < 400 || upstream.status >= 500) {
+    if ((upstream.status >= 300 && upstream.status < 400) || upstream.status >= 500) {
       await upstream.body?.cancel();
       return apiError(502, '目前無法連線至工作室服務，請稍後再試。');
     }
 
+    // 即使直接在瀏覽器開啟 API 網址，也不能把上游 HTML 當成本站網頁執行。
+    const contentType = upstream.headers.get('Content-Type') || '';
+    const hasBody = request.method !== 'HEAD' && upstream.status !== 204;
+    if (hasBody && !/^application\/(?:json|[a-z0-9!#$&^_.+-]+\+json)(?:\s*;|\s*$)/i.test(contentType)) {
+      await upstream.body?.cancel();
+      // ASP.NET 防偽驗證或驗證中介軟體可能回傳空白／HTML 4xx。
+      // 保留狀態碼，讓前台可清除過期 token 或提示重新登入，但不轉送原始內容。
+      if (upstream.status >= 400 && upstream.status < 500) {
+        const messages = {
+          400: '表單驗證失敗或頁面已過期，請確認資料後再送出。',
+          401: '請先登入會員。',
+          403: '目前無法完成此操作，請重新整理頁面並確認登入狀態。',
+          404: '找不到此服務，請重新整理頁面後再試。',
+          429: '操作較頻繁，請稍候再試。',
+        };
+        const response = apiError(upstream.status, messages[upstream.status] || '目前無法完成此操作，請確認資料後再試。');
+        for (const cookie of upstream.headers.getSetCookie()) response.headers.append('Set-Cookie', cookie);
+        const retryAfter = upstream.headers.get('Retry-After');
+        if (retryAfter) response.headers.set('Retry-After', retryAfter);
+        return response;
+      }
+      return apiError(502, '工作室服務回傳格式不正確，請稍後再試。');
+    }
+
     // 從原 Response 複製標頭，保留登入與防偽 Cookie 的多筆 Set-Cookie。
-    const response = new Response(upstream.body, upstream);
-    response.headers.set('Cache-Control', 'no-store, private');
-    response.headers.set('CDN-Cache-Control', 'no-store');
-    response.headers.set('Cloudflare-CDN-Cache-Control', 'no-store');
-    response.headers.set('X-Content-Type-Options', 'nosniff');
-    response.headers.delete('Server');
-    response.headers.delete('X-Powered-By');
-    return response;
+    return protectApiResponse(new Response(upstream.body, upstream));
   } catch {
     return apiError(502, '目前無法連線至工作室服務，請稍後再試。');
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

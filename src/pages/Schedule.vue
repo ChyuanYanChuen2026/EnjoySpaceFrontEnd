@@ -141,10 +141,10 @@ watch(() => route.query.course, value => { courseId.value = Number(value) || '' 
   <Hero title="公開課表" subtitle="探索適合你的練習時光" />
   <section class="container section">
     <form v-chinese-validation class="filters" @submit.prevent="search"><label>學期<select v-model="termId"><option value="">全部學期</option><option v-for="term in catalog.terms" :key="term.id" :value="term.id">{{ term.name }}</option></select></label><label>課程<select v-model="courseId"><option value="">全部課程</option><option v-for="c in catalog.courses" :key="c.id" :value="c.id">{{ c.name }} · {{ c.termName }}</option></select></label>
-      <label>開始日期
+      <label class="schedule-date">開始日期
         <input type="date" data-validation-label="開始日期" v-model="from" required @click="openDatePicker">
       </label>
-      <label>結束日期
+      <label class="schedule-date">結束日期
         <input type="date" data-validation-label="結束日期" v-model="until" :min="from" required @click="openDatePicker">
       </label>
       <label>課程類型<select
@@ -154,12 +154,12 @@ watch(() => route.query.course, value => { courseId.value = Number(value) || '' 
         </select></label><label>老師<select v-model="teacher">
           <option value="">全部老師</option>
           <option v-for="t in teachers" :key="t">{{ t }}</option>
-        </select></label><label>上課地點<select v-model="location">
+        </select></label><label class="schedule-location">上課地點<select v-model="location">
           <option value="">全部地點</option>
           <option v-for="l in locations" :key="l">{{ l }}</option>
-        </select></label><button class="button" :disabled="busy">
+        </select></label><div class="schedule-filter-actions"><button type="submit" class="button" :disabled="busy">
         <SlidersHorizontal :size="16" />搜尋
-      </button><button type="button" class="button outline" @click="reset">重設</button></form>
+      </button><button type="button" class="button outline" @click="reset">重設</button></div></form>
     <p v-if="error" class="notice error" role="alert">{{ error }}</p>
     <p v-if="busy" role="status">讀取課表中…</p>
     <div class="section-heading">
@@ -215,7 +215,20 @@ watch(() => route.query.course, value => { courseId.value = Number(value) || '' 
 </template>
 
 <style scoped>
-.filters input[type="date"] { cursor: pointer; }
+.filters input[type="date"] {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  block-size: 42px;
+}
+/* iOS 原生日期內容有自己的排版尺寸，限定在欄位內並保留原生日曆操作。 */
+.filters input[type="date"]::-webkit-date-and-time-value { min-height: 1.5em; text-align: left; }
+.filters input[type="date"]::-webkit-datetime-edit { padding: 0; }
+.schedule-filter-actions { display: flex; gap: 12px; }
+.schedule-filter-actions .button { white-space: nowrap; flex-shrink: 0; }
+.schedule-filter-actions svg { flex-shrink: 0; }
 .month-layout {
   display: grid;
   grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
@@ -226,5 +239,17 @@ watch(() => route.query.course, value => { courseId.value = Number(value) || '' 
 .month-layout .empty { margin: 0; }
 @media (max-width: 900px) {
   .month-layout { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+@media (max-width: 700px) {
+  .filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
+  .filters label { min-width: 0; }
+  .filters .schedule-date,
+  .filters .schedule-location,
+  .schedule-filter-actions { grid-column: 1 / -1; }
+  .filters input, .filters select { width: 100%; max-width: 100%; height: 44px; font-size: 16px; }
+  .filters select { padding-top: 0; padding-bottom: 0; }
+  .filters input[type="date"] { block-size: 44px; }
+  .schedule-filter-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .schedule-filter-actions .button { width: 100%; min-width: 0; min-height: 44px; }
 }
 </style>

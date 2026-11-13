@@ -12,6 +12,7 @@ const links = [
   ['/member/courses', '我的課程'],
   ['/member/makeup', '我的補課'],
   ['/member/enrollments', '報名紀錄'],
+  ['/member/profile', '會員資料'],
 ]
 async function logout() {
   if (signingOut.value) return
@@ -51,7 +52,7 @@ async function logout() {
 .member-identity button{flex-shrink:0;min-height:40px}
 .member-title{margin-bottom:28px}
 .member-title>p:last-child{margin-bottom:0}
-.member-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid #81998b;border-radius:8px;overflow:hidden;margin-bottom:32px;background:#fff}
+.member-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid #81998b;border-radius:8px;overflow:hidden;margin-bottom:32px;background:#fff}
 .member-nav a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:58px;padding:14px 12px;color:#3e624f;font-weight:600;border-right:1px solid #81998b;transition:background .15s}
 .member-nav a:last-child{border-right:0}
 .member-nav a:hover{background:#edf2ee}
@@ -65,7 +66,8 @@ async function logout() {
   .member-title h1{font-size:32px}
   .member-nav{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:24px}
   .member-nav a{min-height:48px;padding:12px 8px;font-size:14px}
-  .member-nav a:nth-child(2){border-right:0}
-  .member-nav a:nth-child(-n+2){border-bottom:1px solid #81998b}
+  .member-nav a:nth-child(even){border-right:0}
+  .member-nav a:not(:last-child){border-bottom:1px solid #81998b}
+  .member-nav a:last-child{grid-column:1/-1}
 }
 </style>

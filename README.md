@@ -107,7 +107,7 @@ Cloudflare `_headers` **不會替 Worker 產生的 API 回應加標頭**，因�
 ### 輸入驗證與驗收
 
 - Vue 表單使用局部 `v-chinese-validation` 指令，沒有全域點擊／表單攔截；必填、長度、Email、密碼確認與日期錯誤顯示繁中。
-- 註冊與體驗手機都必須是 `09` 開頭、共 10 碼 ASCII 數字。不接受空格、連字號、括號、國際格式或全形數字，也不先 trim／去除符號。
+- 註冊、體驗申請與會員資料的手機都必須是 `09` 開頭、共 10 碼 ASCII 數字。不接受空格、連字號、括號、國際格式或全形數字，也不先 trim／去除符號。
 - 課表查詢驗證日期合法性、起訖順序與含起訖最多 93 天；體驗預約檢查場次有效選項、重複選擇、是否已開課與剩餘額度。前端提示只改善操作體驗，後端在實際送出時仍是資格／名額／金額與本人身分的最終檢核。
 - `npm test` 以隔離 Axios adapter／Worker mock 驗證錯誤、Token、輸入與代理邊界，不連正式資料庫、不建立測試會員。`npm run build` 與 `npm run check:cloudflare` 分別檢查一般與 Cloudflare 正式產物。
 - 正式發布後仍須驗收首頁、深層路由重新整理、註冊與登入、手機錯誤、體驗送出與重複阻擋、過期登入、逾時與 CSP。涉及帳號／報名的寫入應用事先約定的測試帳號和課程執行，不把 build 成功當成正式業務流程驗收通過。
@@ -127,7 +127,23 @@ Cloudflare `_headers` **不會替 Worker 產生的 API 回應加標頭**，因�
 
 ## API
 
-GET：`csrf`、`catalog`、`courses/{id}`、`sessions`、`me`、`dashboard`。
+### 學生會員資料
+
+學生登入後，從會員選單的「會員資料」進入 `/member/profile`。帳號、學號及姓名唯讀；手機與電子郵件必填，LINE ID 可清空。尚未編配學號時顯示「尚未編配」。手機沿用嚴格的 `09` 開頭、共 10 碼 ASCII 數字規則，電子郵件最多 200 字、LINE ID 最多 100 字。
+
+`GET /api/portal/profile` 讀取本人目前資料及 `rowVersion`；`POST /api/portal/profile` 只送出 `phone`、`email`、`lineId`、`rowVersion`。後端從已驗證登入資訊判斷本人，限制有效學生帳號，並保留 Cookie 與 CSRF 驗證。不接受修改帳號、學號、姓名、角色或指定其他會員身分。
+
+資料存於既有 `Users`，後台學生頁讀取相同手機與 Email。會員修改不改寫先前體驗申請或其他歷史紀錄的聯絡資料。使用既有 User 的 RowVersion 防止同時編輯覆蓋；發生版本衝突或無法確認儲存結果時，保留草稿並要求查詢最新資料，不自動重送。尚未儲存的聯絡資料只留在記憶體，不寫入 localStorage／sessionStorage。
+
+**啟用順序：先確認目標資料庫及 Migration，再新增 `dbo.Users.LineId`（可空白、nvarchar(100)），接著部署後端，最後部署前台。** 本次提供的 Migration 不會由前台或後台啟動時自動套用，也不會搬移既有 LINE 資料。新後端的登入及會員查詢會讀取 LineId，因此不能在資料庫尚無此欄位時直接部署新後端；舊後端可繼續使用已新增此可空白欄位的資料庫。更新前須檢查目標資料庫的完整待執行 Migration，不只檢查最新一個。
+
+對應 Migration 為後台 `20261111064524_AddMemberLineId`。`Up` 僅新增此欄位；`Down` 會刪除此欄位及其已儲存的 LINE ID，不應把回退當成無損操作。2026-11-11 經使用者確認後，已套用至本機 `localhost / EnjoySpaceDb`，欄位、Migration 歷程、會員查詢及會員／學生筆數檢查通過；Azure 正式資料庫尚未套用此 Migration。
+
+後台會員資料測試可在 `EnjoySpace.Web` 目錄執行 `dotnet run --project Tests/PortalProfileChecks --configuration ProfileChecks -p:UseAppHost=false`。測試以隨機 GUID 命名的新 SQL 資料庫執行真實 Controller、Cookie、CSRF 與 RowVersion 檢查，結束後清除；不讀取應用程式的業務連線字串。前台 `npm test` 另驗證草稿、錯誤處理與欄位限制。
+
+### 公開資訊與會員 API
+
+GET：`csrf`、`catalog`、`courses/{id}`、`sessions`、`me`、`profile`、`dashboard`。
 
 `catalog` 提供公開課程、學期、啟用方案及教室；`courses/{id}` 提供課程明細與全部未來公開場次；`sessions` 可依 `from`、`until`（最多 93 天）、`courseId`、`termId` 篩選，或以 `sessionId` 查詢單一未來場次。未指定日期時查詢未來 60 天。
 
@@ -143,7 +159,7 @@ GET：`csrf`、`catalog`、`courses/{id}`、`sessions`、`me`、`dashboard`。
 
 老師的 `Teacher.IsActive` 決定是否可公開授課，`User.IsActive` 決定能否登入。匯入的老師可能尚未開通登入，但啟用中的老師所屬公開課程仍應顯示，與後台選擇老師的規則一致。
 
-POST：`login`、`register`、`logout`、`trial-requests`。所有寫入需先取得 `csrf` 的 token，透過 `X-CSRF-TOKEN` 送出。登入與登出後需重新取得 token。
+POST：`login`、`register`、`logout`、`profile`、`trial-requests`。所有寫入需先取得 `csrf` 的 token，透過 `X-CSRF-TOKEN` 送出。登入與登出後需重新取得 token。
 
 前端原始碼皆使用 `.js` 與 Vue `<script setup lang="js">`，沒有 TypeScript 建置步驟。`defineProps({ title: String })` 等寫法是 Vue 的 JavaScript 執行期屬性定義，並非 TypeScript 型別註記。第三方套件附帶的 `.d.ts` 是套件提供的型別資訊，不屬於本專案原始碼，不需刪除。
 

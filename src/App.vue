@@ -6,7 +6,7 @@ import BrandMark from './components/BrandMark.vue'
 import { member, memberError, refreshingMember, refreshMember, loadCatalog, loadError, loading, refreshedAt } from './state'
 const menu = ref(false)
 const route = useRoute()
-const memberPage = computed(() => ['/member', '/member/courses', '/member/makeup', '/member/enrollments'].includes(route.path.replace(/\/$/, '')))
+const memberPage = computed(() => ['/member', '/member/courses', '/member/makeup', '/member/enrollments', '/member/profile'].includes(route.path.replace(/\/$/, '')))
 function refreshWhenVisible() { if (document.visibilityState === 'visible') loadCatalog() }
 watch(() => route.path, () => { menu.value = false; loadCatalog() }, { immediate: true })
 onMounted(() => { refreshMember(); window.addEventListener('focus', refreshWhenVisible) })

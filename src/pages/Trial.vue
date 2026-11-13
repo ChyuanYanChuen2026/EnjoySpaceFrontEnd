@@ -63,6 +63,7 @@ onMounted(async () => {
       name: member.value.displayName,
       email: member.value.email || "",
       phone: member.value.phone || "",
+      lineId: member.value.lineId || "",
     };
   }
   await loadSessions();

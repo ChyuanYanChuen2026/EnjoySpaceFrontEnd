@@ -1,12 +1,12 @@
 <script setup lang="js">
-import { chineseValidation as vChineseValidation, loginFormIssue } from '../chineseValidation';
+import { chineseValidation as vChineseValidation, loginFormIssue } from "../chineseValidation";
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { api } from "../api";
 import { refreshMember, memberError } from "../state";
 import { Flower2 } from "lucide-vue-next";
 import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../validationErrors.js";
-import { safeRedirect } from '../safeRedirect.js';
+import { safeRedirect } from "../safeRedirect.js";
 
 const router = useRouter(),
   route = useRoute(),
@@ -19,7 +19,10 @@ async function submit() {
   if (busy.value) return;
   notice.value = "";
   const issue = loginFormIssue(form.value, register.value);
-  if (issue) { error.value = issue; return; }
+  if (issue) {
+    error.value = issue;
+    return;
+  }
   busy.value = true;
   error.value = "";
   try {
@@ -29,7 +32,7 @@ async function submit() {
       notice.value = "學生帳號已建立，請登入。";
     } else {
       await api("/login", { account: form.value.account, password: form.value.password });
-      if (!await refreshMember()) throw new Error(memberError.value || '目前無法確認登入狀態，請重新確認。');
+      if (!(await refreshMember())) throw new Error(memberError.value || "目前無法確認登入狀態，請重新確認。");
       await router.push(safeRedirect(route.query.redirect));
     }
   } catch (e) {
@@ -59,10 +62,8 @@ async function submit() {
           <label>姓名<input name="name" data-validation-label="姓名" v-model="form.name" autocomplete="name" required maxlength="100" /></label>
           <label>電子郵件<input name="email" data-validation-label="電子郵件" v-model="form.email" type="email" autocomplete="email" required maxlength="200" /></label>
           <label>手機
-            <input name="phone" data-validation-label="手機" v-model="form.phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="10" minlength="10"
-              :pattern="TAIWAN_MOBILE_PATTERN" :data-pattern-message="TAIWAN_MOBILE_MESSAGE"
-              aria-describedby="registration-phone-hint" />
-            <small id="registration-phone-hint" class="muted">請輸入 09 開頭的 10 碼手機號碼，例如 0912345678，不含空格或符號。</small>
+            <input name="phone" data-validation-label="手機" v-model="form.phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="10" minlength="10" :pattern="TAIWAN_MOBILE_PATTERN" :data-pattern-message="TAIWAN_MOBILE_MESSAGE" aria-describedby="registration-phone-hint" />
+            <small id="registration-phone-hint" class="muted">請輸入09開頭的10碼手機號碼，如 0912345678，不含空格或符號。</small>
           </label>
         </template>
         <label>密碼

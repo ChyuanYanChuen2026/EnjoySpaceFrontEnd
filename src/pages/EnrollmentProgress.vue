@@ -39,7 +39,8 @@ onMounted(load);
     <article v-for="r in rows" :key="r.id" class="panel enrollment-record" :class="{ selected: String(r.id) === route.query.application }">
       <p class="muted">報名 #{{ r.id }} · {{ date(r.submittedAt) }}</p>
       <h2>{{ r.courseName }}</h2>
-      <p>{{ r.termName }} · {{ r.quotedSessionCount }} 堂 · NT$ {{ money(r.quotedAmount) }}</p>
+      <p>{{ r.termName }} · {{ r.quotedSessionCount }} 堂 · 目前應收 NT$ {{ money(r.amountDue ?? r.quotedAmount) }}</p>
+      <p v-if="r.amountDue != null && r.amountDue !== r.quotedAmount" class="text-secondary">原報價 NT$ {{ money(r.quotedAmount) }}，金額已由工作室調整，請依目前應收付款。</p>
       <div class="actions">
         <span class="badge" :class="{ approved: r.status === 'Approved' }">報名：{{ statuses[r.status] || r.status }}</span
         ><span class="badge">付款：{{ payments[r.paymentStatus] || "尚未建立款項" }}</span>

@@ -3,10 +3,12 @@ import { chineseValidation as vChineseValidation } from '../chineseValidation'
 import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { api, date, time, money } from '../api'
+import { useRegistrationWindow } from '../useRegistrationWindow'
 const route = useRoute(), router = useRouter()
 const preview = ref(null), policy = ref(''), paymentMethod = ref(''), confirmDetails = ref(false), confirmPolicy = ref(false)
 const busy = ref(false), saving = ref(false), error = ref(''), submittedId = ref(null), uncertain = ref(false)
 const existing = ref(null)
+const { reason: registrationReason, update: updateRegistrationTime } = useRegistrationWindow(preview)
 let revision = 0
 onUnmounted(() => { revision++ })
 async function handle(e) {
@@ -24,6 +26,8 @@ async function load() {
   finally { if (current === revision) busy.value = false }
 }
 async function submit() {
+  updateRegistrationTime()
+  if (registrationReason.value) return
   if (saving.value || busy.value || !preview.value || !confirmDetails.value || !confirmPolicy.value || !paymentMethod.value || uncertain.value) return
   if (!['Cash', 'Transfer'].includes(paymentMethod.value)) { error.value = '請選擇有效的預計付款方式。'; return }
   const current = revision
@@ -88,7 +92,9 @@ watch(() => route.params.id, load, { immediate: true })
       </section>
       <section class="panel enrollment-summary"><h2>確認報名資料</h2>
         <p class="enrollment-total">NT$ {{ money(preview.amount) }} <small>／整期 {{ preview.sessions.length }} 堂</small></p>
-        <fieldset :disabled="saving || uncertain"><legend>預計付款方式（必選）</legend>
+        <p v-if="preview.registrationEndAtUtc">報名截止：{{ date(preview.registrationEndAtUtc) }} {{ time(preview.registrationEndAtUtc) }}（台灣時間）</p>
+        <p v-if="registrationReason" class="notice error" role="alert">{{ registrationReason }}</p>
+        <fieldset :disabled="saving || uncertain || !!registrationReason"><legend>預計付款方式（必選）</legend>
           <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Cash" name="paymentMethod" data-validation-label="預計付款方式" required /><span><strong>現場現金</strong><small>依工作室通知，到現場繳費。</small></span></label>
           <label class="enrollment-choice"><input v-model="paymentMethod" type="radio" value="Transfer" name="paymentMethod" data-validation-label="預計付款方式" required /><span><strong>銀行轉帳</strong><small>等候確認名額及付款通知，請勿先行匯款。</small></span></label>
           <div class="notice">送出申請不代表付款成功或保留名額。工作室確認收款並核准後，才會加入正式上課名單。</div>

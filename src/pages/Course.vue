@@ -4,8 +4,14 @@ import { useRoute } from 'vue-router'
 import { catalogRevision, member } from '../state'
 import { api, date, time, money, calendarDate } from '../api'
 import { CalendarDays, MapPin, UserRound } from 'lucide-vue-next'
+import { useRegistrationWindow } from '../useRegistrationWindow'
 const route = useRoute(), course = ref(null), sessions = ref([]), busy = ref(true), error = ref('')
 const enrollmentState = ref(null), enrollmentError = ref('')
+const { reason: registrationReason } = useRegistrationWindow(course)
+// 到達開始時間後重新取得名額與資格，不沿用開始前的 canEnroll。
+watch(registrationReason, (reason, previous) => {
+  if (course.value && !reason && previous === '此課程尚未到報名開始時間。') load()
+})
 const next = computed(() => sessions.value.find(s => s.enrolled < s.capacity) || sessions.value[0])
 let requestVersion = 0
 async function load() {
@@ -42,6 +48,8 @@ watch([() => route.params.id, catalogRevision, () => member.value?.roles.include
               <div><dt>學期</dt><dd>{{ course.termName }}</dd></div>
               <div><dt>學期狀態</dt><dd>{{ course.termStatusText }}</dd></div>
               <div><dt>期間</dt><dd>{{ calendarDate(course.termStartDate) }}～{{ calendarDate(course.termEndDate) }}</dd></div>
+              <div v-if="course.registrationStartAtUtc"><dt>報名開始</dt><dd>{{ date(course.registrationStartAtUtc) }} {{ time(course.registrationStartAtUtc) }}（台灣時間）</dd></div>
+              <div v-if="course.registrationEndAtUtc"><dt>報名截止</dt><dd>{{ date(course.registrationEndAtUtc) }} {{ time(course.registrationEndAtUtc) }}（台灣時間）</dd></div>
               <div><dt>期課價格</dt><dd>NT$ {{ money(course.termPrice) }}／{{ course.sessionCount }} 堂固定課程</dd></div>
               <div><dt>預設老師</dt><dd>{{ course.teacher }}</dd></div>
               <div><dt>預設教室</dt><dd>{{ course.location }} · {{ course.address }}</dd></div>
@@ -67,8 +75,8 @@ watch([() => route.params.id, catalogRevision, () => member.value?.roles.include
             <RouterLink v-else class="button" to="/member/enrollments">查看報名進度</RouterLink>
           </template>
           <p v-else-if="enrollmentError" class="notice">{{ enrollmentError }}</p>
-          <RouterLink v-else-if="course.canEnroll" class="button" :to="`/courses/${course.id}/enroll`">正式報名整期班 →</RouterLink>
-          <p v-else class="notice">{{ course.enrollmentUnavailableReason || '正式報名請聯繫工作室確認。' }}</p>
+          <RouterLink v-else-if="course.canEnroll && !registrationReason" class="button" :to="`/courses/${course.id}/enroll`">正式報名整期班 →</RouterLink>
+          <p v-else class="notice" role="status">{{ registrationReason || course.enrollmentUnavailableReason || '正式報名請聯繫工作室確認。' }}</p>
           <p v-if="!enrollmentState || enrollmentState.state === 'Pending'" class="muted">申請不保留名額；確認收款並核准後才入班。</p>
           <RouterLink to="/member/enrollments">查看我的報名進度</RouterLink>
           <template v-if="next">

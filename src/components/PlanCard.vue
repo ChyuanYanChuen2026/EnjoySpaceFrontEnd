@@ -1,5 +1,6 @@
 <script setup lang="js">
-import { money, validity, audience } from '../api'
+
+import { money, validity, audience } from '../utils/format.js';
 defineProps({ plan: { type: Object, required: true } })
 </script>
 <template>

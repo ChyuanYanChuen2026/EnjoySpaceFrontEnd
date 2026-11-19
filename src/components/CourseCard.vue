@@ -1,4 +1,5 @@
-<script setup lang="js">  import { money, calendarDate } from '../api'; import { UserRound, MapPin, ArrowUpRight } from 'lucide-vue-next'; defineProps({ course: { type: Object, required: true } })</script>
+<script setup lang="js">
+import { money, calendarDate } from '../utils/format.js'; import { UserRound, MapPin, ArrowUpRight } from 'lucide-vue-next'; defineProps({ course: { type: Object, required: true } })</script>
 <template>
   <RouterLink class="course-card" :to="`/courses/${course.id}`">
     <div class="course-image"><img src="/images/yoga-hero.png" alt="自然採光瑜珈空間中的練習示意" /><span

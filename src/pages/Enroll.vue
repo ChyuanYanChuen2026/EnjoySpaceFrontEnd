@@ -1,9 +1,10 @@
 <script setup>
-import { chineseValidation as vChineseValidation } from '../chineseValidation'
+import { chineseValidation as vChineseValidation } from '../directives/chineseValidation.js'
 import { ref, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api, date, time, money } from '../api'
-import { useRegistrationWindow } from '../useRegistrationWindow'
+import { api } from '../services/api.js';
+import { date, time, money } from '../utils/format.js';
+import { useRegistrationWindow } from '../composables/useRegistrationWindow.js'
 const route = useRoute(), router = useRouter()
 const preview = ref(null), policy = ref(''), paymentMethod = ref(''), confirmDetails = ref(false), confirmPolicy = ref(false)
 const busy = ref(false), saving = ref(false), error = ref(''), submittedId = ref(null), uncertain = ref(false)

@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { portalValidationMessage } from '../src/validationErrors.js';
+import { portalValidationMessage } from '../src/utils/validationErrors.js';
 
 let moduleNumber = 0;
 async function client(handler) {
-  const module = await import(`../src/api.js?test=${++moduleNumber}`);
+  const module = await import(`../src/services/api.js?test=${++moduleNumber}`);
   const calls = [];
   module.apiClient.defaults.adapter = async config => {
     calls.push(config);

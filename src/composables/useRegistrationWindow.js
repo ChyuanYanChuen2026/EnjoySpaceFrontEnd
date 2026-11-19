@@ -1,5 +1,5 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
-import { registrationWindowReason } from './registrationWindow.js';
+import { registrationWindowReason } from '../domain/registrationWindow.js';
 
 // 以 API 的伺服器時間為基準；留在頁面或手機切回前景時也會更新。
 // 此時鐘只控制畫面，實際報名權限仍由後端每次送出時驗證。

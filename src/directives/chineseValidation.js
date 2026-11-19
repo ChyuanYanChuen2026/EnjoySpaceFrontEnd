@@ -1,4 +1,4 @@
-import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE } from './validationErrors.js';
+import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE } from '../utils/validationErrors.js';
 
 // 表單送出前再次檢查文字；不改寫手機或密碼，也不取代後端驗證。
 function textIssue(value, label, max, required = true) {

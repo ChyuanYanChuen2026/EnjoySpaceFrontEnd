@@ -1,12 +1,18 @@
 <script setup lang="js">
-import { chineseValidation as vChineseValidation, loginFormIssue } from "../chineseValidation";
+import { chineseValidation as vChineseValidation, loginFormIssue } from "../directives/chineseValidation.js";
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { api } from "../api";
-import { refreshMember, memberError } from "../state";
+import { api } from '../services/api.js';
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
 import { Flower2 } from "lucide-vue-next";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../validationErrors.js";
-import { safeRedirect } from "../safeRedirect.js";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../utils/validationErrors.js";
+import { safeRedirect } from "../utils/safeRedirect.js";
+
+const memberStore = useMemberStore();
+const { memberError } = storeToRefs(memberStore);
+const { refreshMember } = memberStore;
+
 
 const router = useRouter(),
   route = useRoute(),

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createProfileState, createProfileEditor, profileContactIssue, profileIsDirty, profilePayload } from '../src/memberProfile.js';
-import { TAIWAN_MOBILE_MESSAGE } from '../src/validationErrors.js';
+import { createProfileState, createProfileEditor, profileContactIssue, profileIsDirty, profilePayload } from '../src/domain/memberProfile.js';
+import { TAIWAN_MOBILE_MESSAGE } from '../src/utils/validationErrors.js';
 
 const profile = (changes = {}) => ({
   account: 'test-student', studentNo: null, displayName: '隔離測試學員',

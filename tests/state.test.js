@@ -1,7 +1,15 @@
-import test, { afterEach } from 'node:test';
+import test, { afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { apiClient } from '../src/api.js';
-import { member, memberError, refreshingMember, refreshMember } from '../src/state.js';
+import { apiClient } from '../src/services/api.js';
+import { createPinia, setActivePinia, storeToRefs } from 'pinia';
+import { useMemberStore } from '../src/stores/member.js';
+let member, memberError, refreshingMember, refreshMember;
+beforeEach(() => {
+  setActivePinia(createPinia());
+  const store = useMemberStore();
+  ({ member, memberError, refreshingMember } = storeToRefs(store));
+  ({ refreshMember } = store);
+});
 
 const originalAdapter = apiClient.defaults.adapter;
 const student = { displayName: '測試學生', roles: ['Student'] };

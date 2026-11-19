@@ -1,7 +1,12 @@
-<script setup lang="js">  import Hero from '../components/Hero.vue'; 
-  import CourseCard from '../components/CourseCard.vue'; 
-  import { computed, ref } from 'vue'; 
-  import { catalog, loading, loadError } from '../state'; 
+<script setup lang="js">
+  import Hero from '../components/Hero.vue';
+  import CourseCard from '../components/CourseCard.vue';
+  import { computed, ref } from 'vue';
+  import { storeToRefs } from 'pinia';
+  import { useCatalogStore } from '../stores/catalog.js';
+const catalogStore = useCatalogStore();
+const { catalog, loading, loadError } = storeToRefs(catalogStore);
+
   const termId = ref('');
   const courses = computed(() => catalog.value.courses.filter(c => !termId.value || c.termId === Number(termId.value)))</script>
 <template>

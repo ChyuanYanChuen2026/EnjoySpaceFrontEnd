@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { monthCells, shiftMonth } from '../scheduleCalendar.js'
+import { monthCells, shiftMonth } from '../utils/scheduleCalendar.js'
 
 const props = defineProps({
   month: { type: String, required: true },

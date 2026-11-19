@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fieldValidationMessage, loginFormIssue, trialContactIssue, scheduleDateRangeIssue } from '../src/chineseValidation.js';
-import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE } from '../src/validationErrors.js';
-import { trialApplicationIssue, trialBookingIssue } from '../src/trialApplication.js';
+import { fieldValidationMessage, loginFormIssue, trialContactIssue, scheduleDateRangeIssue } from '../src/directives/chineseValidation.js';
+import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE } from '../src/utils/validationErrors.js';
+import { trialApplicationIssue, trialBookingIssue } from '../src/domain/trialApplication.js';
 
 const validForm = () => ({
   account: 'student-01', name: '測試學員', email: 'student@example.test',

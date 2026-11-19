@@ -2,6 +2,43 @@
 
 獨立 Vue 3 + JavaScript + Vite 專案。MVC 管理介面維持在 `EnjoySpace.Web`，官網以 `/api/portal` 讀寫同一個 `AppDbContext`，不另建課程資料庫。
 
+## 前端程式結構
+
+`src/main.js` 建立 Vue 應用，先註冊 Pinia，再註冊路由。檔案依職責放置：
+
+| 目錄 | 用途 |
+| --- | --- |
+| `pages/`、`components/` | 頁面與共用元件 |
+| `router/` | 既有網址與頁面對應 |
+| `stores/` | Pinia 會員狀態、課程目錄、體驗申請草稿 |
+| `composables/` | 使用 Vue 響應式與生命週期的共用邏輯，例如報名時間更新 |
+| `services/` | Axios API 請求、防偽驗證與錯誤處理 |
+| `domain/` | 報名、體驗、個資編輯及打卡的規則與流程 |
+| `utils/` | 日期、金額、月曆、導向、請求識別碼及錯誤訊息工具 |
+| `directives/` | 中文表單驗證指令與對應欄位檢核 |
+
+頁面透過 `useMemberStore()`、`useCatalogStore()`、`useTrialStore()` 取得共用狀態；解構狀態時使用 `storeToRefs()`，避免失去響應性。動作直接取自 store。單頁表單與視窗開關仍留在頁面，不必全部放入 store。
+
+會員與草稿只存於記憶體，未加入 localStorage 或其他持久化。登入仍由後端 Cookie 驗證，每次業務操作仍由 API 檢查權限。
+
+驗證命令：`npm run lint` 檢查所有 `src/` 的 JS 與 Vue 檔案，攔截未定義變數、樣板工具、未匯入元件與指令。Vue Router 註冊的 `RouterLink`、`RouterView` 列為合法全域元件。這些檢查依 ESLint 與 Vue 外掛官方設定方式建立，不強制調整既有排版。
+
+`npm test`、`npm run build` 與 `npm run build:cloudflare` 都會先自動執行上述檢查，失敗就停止；後者只建置，不會部署。測試另有故意遺漏 store 匯入、樣板工具、元件與指令的案例，確認檢查能攔下這類執行期錯誤。
+
+靜態檢查與建置不能取代瀏覽器驗證。會員、補課與體驗頁面仍須依測試帳號實際資料檢查；沒有可用資格或方案時，不能將空狀態檢查視為已通過預約與送出流程。
+
+### 隔離補課與體驗預約驗證
+
+既有 `EnjoySpace.Web/Tests/StudentWorkflowChecks` 的 `--ui` 模式會建立隨機 `EnjoySpace_StudentWorkflowChecks_` 資料庫，啟動使用該資料庫的獨立 API，並準備補課學生、已付款三堂體驗學生及未來場次。測試資料依當下台灣日期產生，補課目標課程刻意使用不同 TermId、但日期落在原學期範圍內。此為隔離測試工具，不是日常 Demo 功能。
+
+1. 在 `EnjoySpace.Web` 執行 `dotnet run --project Tests/StudentWorkflowChecks --configuration Rules -- --ui`，等待 `QR_TRIAL_UI_READY`。
+2. 測試 API 位址與臨時帳號資訊存於該專案被 Git 忽略的 `artifacts/qr-trial-ui.json`。不要將檔案內容貼到聊天或提交版本控制。
+3. 在本前台目錄另開終端機，讀取該檔案的 `api` 為此程序的 `API_PROXY_TARGET`，再執行 `npm run dev -- --host 127.0.0.1 --port 4401`。先檢查設定確實存在再啟動，不使用預設業務 API。瀏覽 `http://localhost:4401`，與平常的 `127.0.0.1:4000` 分開使用。
+4. 使用 `fixture` 內的補課帳號完成一次跨學期補課送出及取消，確認資格恢復可用；使用體驗帳號先一次預約兩堂、再單堂預約一堂，確認剩餘額度為零，再逐堂取消，確認恢復三堂且保留取消原因。
+5. 在 `EnjoySpace.Web` 建立空檔 `artifacts/qr-trial-ui.json.done`。測試程式會核對資料庫中的取消歷史、資格、堂數及未提前建立上課名單，再停止 API、刪除臨時帳號資訊並移除本次測試資料庫。另停止 4401 的 Vite。逾時會清理並回報失敗，不能視為驗證通過。
+
+上述測試不讀取應用程式的業務資料庫連線，不執行 `--apply-development`，也不對既有業務資料庫套用 Migration。測試原始碼目前沿用後端既有的 `Tests/*` Git 忽略規則；若要將這套工具納入版本控制，需另行調整該規則。
+
 ## 本機啟動
 
 1. 在 MVC 專案確認既有 `DefaultConnection` 設定。
@@ -9,7 +46,7 @@
 3. 在 MVC 專案執行 `dotnet run --launch-profile http`（`http://localhost:5209`）。
 4. 在本目錄執行 `npm ci`、`npm run dev`，開啟 `http://127.0.0.1:4000`。套件已完整安裝時，後續只需 `npm run dev`。
 
-Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同一個官網網址操作登入與送出表單。所有前台 API 請求統一透過 `src/api.js` 的 Axios 實例，保留 Cookie、防偽 token、JSON 驗證與錯誤提示，連線逾時為 15 秒。
+Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同一個官網網址操作登入與送出表單。所有前台 API 請求統一透過 `src/services/api.js` 的 Axios 實例，保留 Cookie、防偽 token、JSON 驗證與錯誤提示，連線逾時為 15 秒。
 
 後台連接埠不同時，複製 `.env.example` 為 `.env.local`，設定 `API_PROXY_TARGET` 後重啟 Vite。`npm run preview` 也會使用相同代理設定。
 

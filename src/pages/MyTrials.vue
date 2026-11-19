@@ -1,13 +1,14 @@
 <script setup>
-import { chineseValidation as vChineseValidation } from '../chineseValidation';
+import { chineseValidation as vChineseValidation } from '../directives/chineseValidation.js';
 import { ref, onMounted, nextTick, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import { api, date, time, money, calendarDate } from '../api';
+import { api } from '../services/api.js';
+import { date, time, money, calendarDate } from '../utils/format.js';
 import MemberPage from '../components/MemberPage.vue';
 import MemberToolbar from '../components/MemberToolbar.vue';
 import TrialBookingPicker from '../components/TrialBookingPicker.vue';
-import { newRequestKey } from '../requestKey';
-import { trialBookingIssue } from '../trialApplication.js';
+import { newRequestKey } from '../utils/requestKey.js';
+import { trialBookingIssue } from '../domain/trialApplication.js';
 const router = useRouter(), items = ref([]), busy = ref(false), error = ref(''), notice = ref(''), selected = ref(null), options = ref(null), choices = ref([0]), batch = ref(''), modal = ref(null), modalText = ref('');
 const labels = { Pending:'待審核', Contacted:'已聯繫，等待審核', Approved:'已核准', Rejected:'已退回', Cancelled:'已取消' };
 const attendance = { Scheduled:'尚未打卡', Present:'出席', Late:'遲到', Absent:'缺席' };
@@ -68,7 +69,7 @@ onMounted(load);
         </form>
       </section>
       <h3 v-if="item.bookings.length">我的場次</h3>
-      <article v-for="b in item.bookings" :key="b.id" class="trial-booking-row"><div><h4>{{ b.name }} <span class="badge">{{ labels[b.status] }}</span></h4><p>預約單 #{{ b.id }} · {{ date(b.startsAt) }} {{ time(b.startsAt) }}–{{ time(b.endsAt) }}</p><p>{{ b.teacher }} · {{ b.location }} <span v-if="b.attendance && b.status === 'Approved'">· {{ attendance[b.attendance] }}</span></p><p v-if="b.reviewNote">工作室回覆：{{ b.reviewNote }}</p></div><button v-if="b.canCancel" class="button outline" :disabled="busy" @click="cancelTarget = b; cancelReason = ''">取消這堂預約</button></article>
+      <article v-for="b in item.bookings" :key="b.id" class="trial-booking-row"><div><h4>{{ b.name }} <span class="badge">{{ labels[b.status] }}</span></h4><p>預約單 #{{ b.id }} · {{ date(b.startsAt) }} {{ time(b.startsAt) }}–{{ time(b.endsAt) }}</p><p>{{ b.teacher }} · {{ b.location }} <span v-if="b.attendance && b.status === 'Approved'">· {{ attendance[b.attendance] }}</span></p><p v-if="b.reviewNote">{{ b.status === 'Cancelled' ? '取消原因' : '工作室回覆' }}：{{ b.reviewNote }}</p></div><button v-if="b.canCancel" class="button outline" :disabled="busy" @click="cancelTarget = b; cancelReason = ''">取消這堂預約</button></article>
     </article>
     <section v-if="cancelTarget" class="panel"><h2>取消預約 #{{ cancelTarget.id }}</h2><p>取消後會釋放此堂使用的額度。已開課或已點名的場次無法取消。</p><form v-chinese-validation @submit.prevent="cancel"><label>取消原因<textarea v-model="cancelReason" data-validation-label="取消原因" required maxlength="500"></textarea></label><button class="button" :disabled="busy">確認取消預約</button><button class="button outline" type="button" :disabled="busy" @click="cancelTarget = null">保留預約</button></form></section>
     <dialog ref="modal" class="trial-error-dialog" aria-labelledby="trial-error-title"><h2 id="trial-error-title">請確認預約資料</h2><p>{{ modalText }}</p><button class="button" @click="modal.close()">我知道了</button></dialog>

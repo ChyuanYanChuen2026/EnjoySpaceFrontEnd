@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { safeRedirect } from '../src/safeRedirect.js';
+import { safeRedirect } from '../src/utils/safeRedirect.js';
 
 test('保留課程、會員、體驗與打卡的站內目的地和查詢／片段', () => {
   for (const path of ['/member', '/member/courses?course=12', '/member/makeup?request=3',

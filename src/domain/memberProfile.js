@@ -1,4 +1,4 @@
-import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE, portalValidationMessage } from './validationErrors.js';
+import { isTaiwanMobile, TAIWAN_MOBILE_MESSAGE, portalValidationMessage } from '../utils/validationErrors.js';
 
 const contactFields = ['phone', 'email', 'lineId'];
 

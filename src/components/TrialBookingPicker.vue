@@ -1,7 +1,8 @@
 <script setup>
 import { computed, ref } from 'vue'
-import { date, time } from '../api'
-import { groupSessionsByDay, shiftMonth, taiwanDateKey } from '../scheduleCalendar'
+
+import { date, time } from '../utils/format.js';
+import { groupSessionsByDay, shiftMonth, taiwanDateKey } from '../utils/scheduleCalendar.js'
 import SessionMonthCalendar from './SessionMonthCalendar.vue'
 
 const props = defineProps({

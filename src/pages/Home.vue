@@ -1,16 +1,22 @@
 <script setup lang="js">
-
-import Hero from '../components/Hero.vue'; 
-import CourseCard from '../components/CourseCard.vue'; 
-import PlanCard from '../components/PlanCard.vue'; 
-import { catalog, loading, loadError } from '../state'; 
-import { money } from '../api'; 
+import Hero from '../components/Hero.vue';
+import CourseCard from '../components/CourseCard.vue';
+import PlanCard from '../components/PlanCard.vue';
+import { storeToRefs } from 'pinia';
+import { useCatalogStore } from '../stores/catalog.js';
+import { money } from '../utils/format.js';
 import { Sprout, Heart, UsersRound, Flower2, ArrowRight, Check } from 'lucide-vue-next';
 
+
+const catalogStore = useCatalogStore();
+const { catalog, loading, loadError } = storeToRefs(catalogStore);
+
+
+
 const features = [
-  { icon: Sprout, title: '適合各種程度', copy: '從初學者到進階者，找到適合自己的練習。' }, 
-  { icon: UsersRound, title: '小班制教學', copy: '照顧每一位學員的練習品質與身心狀態。' }, 
-  { icon: Flower2, title: '身心整合', copy: '結合體位法與呼吸，讓練習延伸到生活。' }, 
+  { icon: Sprout, title: '適合各種程度', copy: '從初學者到進階者，找到適合自己的練習。' },
+  { icon: UsersRound, title: '小班制教學', copy: '照顧每一位學員的練習品質與身心狀態。' },
+  { icon: Flower2, title: '身心整合', copy: '結合體位法與呼吸，讓練習延伸到生活。' },
   { icon: Heart, title: '溫暖支持的社群', copy: '在這裡，遇見同樣用心照顧自己的夥伴。' }
   ];
 </script>

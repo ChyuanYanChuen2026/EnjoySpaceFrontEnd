@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { registrationWindowReason } from '../src/registrationWindow.js';
+import { registrationWindowReason } from '../src/domain/registrationWindow.js';
 
 const details = { registrationStartAtUtc: '2030-01-01T02:00:00Z', registrationEndAtUtc: '2030-01-02T02:00:00Z' };
 test('報名時間以 UTC 判斷，開始包含、截止不包含', () => {

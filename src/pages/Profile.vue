@@ -2,12 +2,18 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { CircleCheck, CircleAlert, X } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
-import { api } from '../api'
-import { member, refreshMember } from '../state'
-import { chineseValidation as vChineseValidation } from '../chineseValidation.js'
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from '../validationErrors.js'
-import { createProfileState, createProfileEditor, profileIsDirty } from '../memberProfile.js'
+import { api } from '../services/api.js';
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
+import { chineseValidation as vChineseValidation } from '../directives/chineseValidation.js'
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from '../utils/validationErrors.js'
+import { createProfileState, createProfileEditor, profileIsDirty } from '../domain/memberProfile.js'
 import MemberPage from '../components/MemberPage.vue'
+
+const memberStore = useMemberStore();
+const { member } = storeToRefs(memberStore);
+const { refreshMember } = memberStore;
+
 
 const router = useRouter()
 const state = reactive(createProfileState())

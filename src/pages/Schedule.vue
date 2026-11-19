@@ -1,13 +1,19 @@
 <script setup>
-import { chineseValidation as vChineseValidation, scheduleDateRangeIssue } from '../chineseValidation'
+import { chineseValidation as vChineseValidation, scheduleDateRangeIssue } from '../directives/chineseValidation.js'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { CalendarDays, List, MapPin, SlidersHorizontal, UserRound } from 'lucide-vue-next'
-import { api, date, time } from '../api'
-import { catalog, catalogRevision } from '../state'
-import { groupSessionsByDay, monthRange, shiftMonth, summarizeSessionDays, taiwanDateKey } from '../scheduleCalendar'
+import { api } from '../services/api.js';
+import { date, time } from '../utils/format.js';
+import { storeToRefs } from 'pinia';
+import { useCatalogStore } from '../stores/catalog.js';
+import { groupSessionsByDay, monthRange, shiftMonth, summarizeSessionDays, taiwanDateKey } from '../utils/scheduleCalendar.js'
 import Hero from '../components/Hero.vue'
 import SessionMonthCalendar from '../components/SessionMonthCalendar.vue'
+
+const catalogStore = useCatalogStore();
+const { catalog, catalogRevision } = storeToRefs(catalogStore);
+
 
 const route = useRoute()
 const courseId = ref(Number(route.query.course) || '')

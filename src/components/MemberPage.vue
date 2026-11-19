@@ -1,8 +1,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { api } from '../api'
-import { member } from '../state'
+import { api } from '../services/api.js';
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
+
+const memberStore = useMemberStore();
+const { member } = storeToRefs(memberStore);
+
 
 defineProps({ title: String, eyebrow: String, description: String })
 const router = useRouter()

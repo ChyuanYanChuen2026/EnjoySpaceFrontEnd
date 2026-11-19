@@ -1,11 +1,18 @@
 <script setup>
-import { chineseValidation as vChineseValidation } from '../chineseValidation'
+import { chineseValidation as vChineseValidation } from '../directives/chineseValidation.js'
 import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { api, date, time, calendarDate } from '../api'
-import { catalogRevision, loadCatalog } from '../state'
+import { api } from '../services/api.js';
+import { date, time, calendarDate } from '../utils/format.js';
+import { storeToRefs } from 'pinia';
+import { useCatalogStore } from '../stores/catalog.js';
 import MemberPage from '../components/MemberPage.vue'
 import MemberToolbar from '../components/MemberToolbar.vue'
+
+const catalogStore = useCatalogStore();
+const { catalogRevision } = storeToRefs(catalogStore);
+const { loadCatalog } = catalogStore;
+
 
 const route = useRoute(), router = useRouter()
 const data = ref({ entitlements: [], requests: [] }), busy = ref(false), saving = ref(false), loadingOptions = ref(false)

@@ -1,10 +1,20 @@
 <script setup lang="js">
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { api, date, time, money, calendarDate, ApiError } from "../api";
-import { member, refreshMember, catalogRevision } from "../state";
+import { api, ApiError } from '../services/api.js';
+import { date, time, money, calendarDate } from '../utils/format.js';
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
+import { useCatalogStore } from '../stores/catalog.js';
 import MemberPage from "../components/MemberPage.vue";
 import MemberToolbar from "../components/MemberToolbar.vue";
+
+const memberStore = useMemberStore();
+const { member } = storeToRefs(memberStore);
+const { refreshMember } = memberStore;
+const catalogStore = useCatalogStore();
+const { catalogRevision } = storeToRefs(catalogStore);
+
 
 const router = useRouter(),
   data = ref({ sessions: [], requests: [], passes: [] }),

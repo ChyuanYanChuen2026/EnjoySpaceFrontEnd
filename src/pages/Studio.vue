@@ -1,7 +1,12 @@
 <script setup lang="js">
 import Hero from '../components/Hero.vue'
-import { catalog } from '../state.js'
+import { storeToRefs } from 'pinia';
+import { useCatalogStore } from '../stores/catalog.js';
 import { MapPin } from 'lucide-vue-next'
+
+const catalogStore = useCatalogStore();
+const { catalog } = storeToRefs(catalogStore);
+
 </script>
 <template>
   <Hero title="安放身心的日常空間" subtitle="在城市裡，找到一段安靜的時光" />

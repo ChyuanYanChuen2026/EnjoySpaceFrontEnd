@@ -1,10 +1,19 @@
 <script setup lang="js">
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { catalogRevision, member } from '../state'
-import { api, date, time, money, calendarDate } from '../api'
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
+import { useCatalogStore } from '../stores/catalog.js';
+import { api } from '../services/api.js';
+import { date, time, money, calendarDate } from '../utils/format.js';
 import { CalendarDays, MapPin, UserRound } from 'lucide-vue-next'
-import { useRegistrationWindow } from '../useRegistrationWindow'
+import { useRegistrationWindow } from '../composables/useRegistrationWindow.js'
+
+const memberStore = useMemberStore();
+const { member } = storeToRefs(memberStore);
+const catalogStore = useCatalogStore();
+const { catalogRevision } = storeToRefs(catalogStore);
+
 const route = useRoute(), course = ref(null), sessions = ref([]), busy = ref(true), error = ref('')
 const enrollmentState = ref(null), enrollmentError = ref('')
 const { reason: registrationReason } = useRegistrationWindow(course)

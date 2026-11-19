@@ -1,8 +1,9 @@
 <script setup>
 import { reactive, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { api, date, time } from '../api';
-import { createCheckInFlow } from '../checkInFlow';
+import { api } from '../services/api.js';
+import { date, time } from '../utils/format.js';
+import { createCheckInFlow } from '../domain/checkInFlow.js';
 const route = useRoute(), router = useRouter(), state = reactive({}), dialog = ref(null), report = ref('');
 const key = 'enjoyspace-check-in';
 function saveCheckIn(value) { try { value ? sessionStorage.setItem(key, JSON.stringify(value)) : sessionStorage.removeItem(key); } catch { /* Storage is optional; scanning still works. */ } }

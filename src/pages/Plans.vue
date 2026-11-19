@@ -1,7 +1,12 @@
 <script setup lang="js">
 import Hero from "../components/Hero.vue";
 import PlanCard from "../components/PlanCard.vue";
-import { catalog, loading, loadError } from "../state";
+import { storeToRefs } from 'pinia';
+import { useCatalogStore } from '../stores/catalog.js';
+
+const catalogStore = useCatalogStore();
+const { catalog, loading, loadError } = storeToRefs(catalogStore);
+
 </script>
 
 <template>

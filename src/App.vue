@@ -3,7 +3,17 @@ import { computed, ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Menu, X, ArrowUpRight } from 'lucide-vue-next'
 import BrandMark from './components/BrandMark.vue'
-import { member, memberError, refreshingMember, refreshMember, loadCatalog, loadError, loading, refreshedAt } from './state'
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from './stores/member.js';
+import { useCatalogStore } from './stores/catalog.js';
+
+const memberStore = useMemberStore();
+const { member, memberError, refreshingMember } = storeToRefs(memberStore);
+const { refreshMember } = memberStore;
+const catalogStore = useCatalogStore();
+const { loadError, loading, refreshedAt } = storeToRefs(catalogStore);
+const { loadCatalog } = catalogStore;
+
 const menu = ref(false)
 const route = useRoute()
 const memberPage = computed(() => ['/member', '/member/courses', '/member/makeup', '/member/enrollments', '/member/profile'].includes(route.path.replace(/\/$/, '')))

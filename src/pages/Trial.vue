@@ -1,14 +1,27 @@
 <script setup lang="js">
-import { chineseValidation as vChineseValidation, trialContactIssue } from "../chineseValidation";
+import { chineseValidation as vChineseValidation, trialContactIssue } from "../directives/chineseValidation.js";
 import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import Hero from "../components/Hero.vue";
-import { api, date, time, money, validity, ApiError } from "../api";
-import { catalog, member, refreshMember, trialDraft, catalogRevision, loading as loadingCatalog } from "../state";
-import { trialApplicationIssue } from "../trialApplication.js";
-import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../validationErrors.js";
-import { newRequestKey } from "../requestKey";
+import { api, ApiError } from '../services/api.js';
+import { date, time, money, validity } from '../utils/format.js';
+import { storeToRefs } from 'pinia';
+import { useMemberStore } from '../stores/member.js';
+import { useCatalogStore } from '../stores/catalog.js';
+import { useTrialStore } from '../stores/trial.js';
+import { trialApplicationIssue } from "../domain/trialApplication.js";
+import { TAIWAN_MOBILE_PATTERN, TAIWAN_MOBILE_MESSAGE } from "../utils/validationErrors.js";
+import { newRequestKey } from "../utils/requestKey.js";
 import { CalendarDays, Clock3, UserRound, MapPin, CheckCircle2, LockKeyhole } from "lucide-vue-next";
+
+const memberStore = useMemberStore();
+const { member } = storeToRefs(memberStore);
+const { refreshMember } = memberStore;
+const catalogStore = useCatalogStore();
+const { catalog, catalogRevision, loading: loadingCatalog } = storeToRefs(catalogStore);
+const trialStore = useTrialStore();
+const { trialDraft } = storeToRefs(trialStore);
+
 
 const route = useRoute();
 const router = useRouter();

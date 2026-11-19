@@ -16,19 +16,19 @@ import MyTrials from '../pages/MyTrials.vue'
 import Studio from '../pages/Studio.vue'
 import Plans from '../pages/Plans.vue'
 
-const router = createRouter({ 
-  history: 
-  createWebHistory(), 
-  scrollBehavior: () => ({ top: 0 }), 
+const router = createRouter({
+  history:
+  createWebHistory(),
+  scrollBehavior: () => ({ top: 0 }),
   routes: [
-    { path: '/', component: Home }, 
-    { path: '/courses', component: Courses }, 
+    { path: '/', component: Home },
+    { path: '/courses', component: Courses },
     { path: '/courses/:id', component: Course },
     { path: '/courses/:id/enroll', component: Enroll },
-    { path: '/schedule', component: Schedule }, 
-    { path: '/trial', component: Trial }, 
+    { path: '/schedule', component: Schedule },
+    { path: '/trial', component: Trial },
     { path: '/login', component: Login },
-    { path: '/member', component: Member }, 
+    { path: '/member', component: Member },
     { path: '/member/profile', component: Profile },
     { path: '/member/enrollments', component: EnrollmentProgress },
     { path: '/member/courses', component: MyCourses },
@@ -38,7 +38,7 @@ const router = createRouter({
     { path: '/studio', component: Studio },
     { path: '/plans', component: Plans },
     { path: '/:pathMatch(.*)*', redirect: '/' },
-  ] 
+  ]
 })
 
 export default router

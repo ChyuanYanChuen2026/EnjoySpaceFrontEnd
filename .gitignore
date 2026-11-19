@@ -68,6 +68,9 @@ typings/
 /*.png
 /artifacts/
 /tmp/
+# 保留 /tests/ 原始碼供回歸驗證，只忽略測試執行產物。
+/tests/**/artifacts/
+/tests/**/test-results/
 /dist-cloudflare/
 /.wrangler/
 /.dev.vars*

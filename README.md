@@ -54,7 +54,7 @@ Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同�
 
 執行 `npm run build`，產出 `dist/`。部署靜態網站時，前端路由 fallback 設為 `index.html`；`/api/portal/*` 必須代理至 MVC 並保留 Cookie、Set-Cookie 與防偽 header。正式環境使用 HTTPS，代理應轉送正確的 scheme。API 與靜態檔案可分開部署，但在瀏覽器使用同源入口；目前不採跨站 Cookie 或任意來源 CORS。
 
-### Cloudflare 正式部署與 main 自動更新
+### main 自動驗證與 Cloudflare 手動部署
 
 目前採用 **Workers + Static Assets**，不是 Pages。`vite.config.js` 只在 `--mode cloudflare` 載入 Cloudflare 外掛；本機 `npm run dev` 繼續使用 Vite `/api` 代理。
 
@@ -62,26 +62,28 @@ Vite 將 `/api` 代理至 MVC，瀏覽器使用同源 Cookie；本機請以同�
 | --- | --- |
 | Git 儲存庫 | `ChyuanYanChuen2026/EnjoySpaceFrontEnd` |
 | Worker 名稱 | `enjoyspacefrontend`，須與 `wrangler.jsonc` 的 `name` 完全一致 |
-| 正式分支 | `main`，注意大小寫；`Dev` 不直接發布正式環境 |
+| 正式分支 | `main`；push／PR 只測試與建置，部署必須手動觸發 |
 | Root directory | `/`（這是獨立的前台儲存庫） |
-| Build command | `npm test && npm run build:cloudflare` |
-| Deploy command | `npx wrangler deploy` |
+| 自動驗證 | `.github/workflows/frontend.yml`：`npm ci`、`npm test`、正式與 Cloudflare 建置 |
+| 手動部署 | GitHub Actions →「前端測試建置與手動部署」→ Run workflow；僅允許 `main` |
 | 前台主網址 | `https://twtpenjoyspace.com` |
 | API_ORIGIN | `https://app-enjoyspace-prod-heeghtdcbte9hyd8.eastasia-01.azurewebsites.net` |
 
 `API_ORIGIN` 是公開的後台網址，可存版本控制；密碼、連線字串、Cloudflare API Token 都不能放在前台或 `VITE_*` 變數。這個網址在 `wrangler.jsonc` 管理，日後更新後台網址要同步修改此檔，避免 Dashboard 的手動值被下次部署覆蓋。測試環境如需使用不同後台，先另外規劃環境設定，不要讓測試送出操作寫入正式資料。
 
-依序設定，每一步確認成功後才繼續：
+**在任何可能更新 main 的推送前，先停用 Cloudflare 原本的 Git 自動部署入口；只新增 GitHub Actions 並不會停用它。**
 
-1. 本機執行 `npm test`、`npm run build`、`npm run check:cloudflare`；最後一個只有打包與部署 dry-run，不會發布。確認這輪變更與測試檔都已納入 Git；`dist/`、`dist-cloudflare/`、`.wrangler/` 不應提交。
-2. 將已驗證版本正常合併到 `main` 並推送；不要使用 force push。若合併有衝突，先核對差異。舊 `main` 曾追蹤建置產物，須在合併時取消它們的 Git 追蹤，保留原始碼、lockfile 與本機檔案。
-3. Cloudflare → Workers & Pages → `enjoyspacefrontend` → Settings → Builds，連接上表儲存庫，設定 Production branch 為 `main`、Root directory 與建置／部署命令。保持自動建置啟用；沒有測試環境時先停用非正式分支建置。
-4. 在 Deployments 查看**新的**建置，核對分支及 commit SHA 與剛推送的 `main` 相同。重試舊失敗建置可能仍使用舊 commit，不能當作最新發布。
+1. 本機執行 `npm test`、`npm run build`、`npm run build:cloudflare`；這些命令不會部署。確認變更與測試檔已納入 Git；`dist/`、`dist-cloudflare/`、`.wrangler/` 不應提交。
+2. 只有獲准且第 3 步已確認完成後，才將已驗證版本正常合併到 `main` 並推送；不要使用 force push。若合併有衝突，先核對差異。舊 `main` 曾追蹤建置產物，須取消它們的 Git 追蹤，保留原始碼、lockfile 與本機檔案。
+3. 到 Cloudflare → Workers & Pages → `enjoyspacefrontend` → Settings → Build，停用 Git 自動建置／部署觸發；若無獨立開關，解除此 Worker 的 Git 儲存庫連線。保留 Worker、網域及目前正式部署，不刪除它們。此為 Dashboard 設定，本機 YAML 無法取代；尚未登入確認前，不可宣稱已停用。
+4. 在 GitHub Actions Secrets 設定 `CLOUDFLARE_API_TOKEN` 與 `CLOUDFLARE_ACCOUNT_ID`。Token 僅限目標帳號及所需 Worker 權限，值不可放入檔案或聊天。只有手動 deploy job 讀取它們，push／PR 的 build job 不使用部署憑證。
 5. 先測試 `workers.dev` 網址及 `/api/portal/catalog`。後者應為 JSON，不可回 Vue 的 HTML 或 503。空陣列表示尚無公開課程，不能靠新增假資料解決。
 6. 同一 Worker → Settings → Domains & Routes → Add → Custom Domain，輸入 `twtpenjoyspace.com`。部分介面另列 Domains 分頁。Cloudflare 會建立對應 DNS／TLS 憑證；有既存網站 DNS 衝突時先核對，勿刪除不相關的 MX、TXT 或其他網站紀錄。等狀態為 Active 後再開啟 HTTPS 網址。
 7. 本專案目前讓 Custom Domain 由 Dashboard 管理，`wrangler.jsonc` **不宣告 routes**。不要為了綁網域新增萬用 `/*` 代理或重建 Worker。後續要改由程式管理網域時，先完整列出現有綁定再遷移。`www.twtpenjoyspace.com` 尚未設定，不視為自動可用。
 8. Azure 後台將 `Portal__PublicBaseUrl` 設為 `https://twtpenjoyspace.com`，確保新產生的課堂 QR Code 指向新網域。密碼重設後台網址另依既有 `PasswordRecovery__PublicBaseUrl` 流程設定，不混用。確認 Production、HTTPS／代理辨識與 Cookie 設定，再測登入與資料送出。
-9. 日後 `main` 每次收到新的 push，Workers Builds 應自動執行測試、建置與部署。以 commit SHA 核對一次完整自動更新；失敗時查看新建置紀錄，原有成功部署仍是目前版本。需要回復時使用已驗證的上一版部署，並同步修正 `main`。
+9. 日後 main 的 push 與 PR 由 GitHub Actions 自動測試及建置，deploy job 應顯示 skipped。發布時進入 Actions →「前端測試建置與手動部署」→ Run workflow，選 main、勾選 `deploy`，在 `confirm_target` 填入 `enjoyspacefrontend`。未勾選、確認字不符或分支不是 main 都不會部署。每次手動發布重新測試與建置，僅部署同一次 run、同一 SHA 的產物，再核對正式版本。
+
+工作流程須先進入預設分支，GitHub 才提供 Run workflow 入口。尚未提交／推送的修改不影響線上設定；Cloudflare 自動觸發停用及 GitHub Secrets 設定需另行完成。未完成前，不可宣稱「合併 main 不會部署」或「手動部署已驗證」。
 
 綁新網域後，舊網域的登入 Cookie 不會搬過去，會員需要重新登入。先保留舊 Worker 網址供排錯，不在未驗證時刪除。
 

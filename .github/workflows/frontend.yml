@@ -1,0 +1,88 @@
+name: 前端測試建置與手動部署
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: '測試與建置成功後部署正式前台（預設不部署）'
+        type: boolean
+        required: true
+        default: false
+      confirm_target:
+        description: '部署時請填入 enjoyspacefrontend'
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: 測試與建置
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: 檢查手動部署條件
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
+        env:
+          CONFIRM_TARGET: ${{ inputs.confirm_target }}
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/main' || { echo '::error::正式部署僅允許 main 分支'; exit 1; }
+          test "$CONFIRM_TARGET" = 'enjoyspacefrontend' || { echo '::error::請確認部署目標'; exit 1; }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: 靜態檢查與完整測試
+        run: npm test
+      - name: 正式建置
+        run: npm run build
+      - name: Cloudflare 建置（不部署）
+        run: npm run build:cloudflare
+      - name: 保存本次 Cloudflare 建置產物
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-cloudflare-${{ github.sha }}
+          path: dist-cloudflare/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    name: 手動部署 Cloudflare
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.deploy == true && inputs.confirm_target == 'enjoyspacefrontend'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: cloudflare-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          name: portal-cloudflare-${{ github.sha }}
+          path: dist-cloudflare/
+      - name: 檢查部署憑證
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" && test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo '::error::請先設定 Cloudflare GitHub Secrets'; exit 1; }
+      - name: 部署本次已驗證的建置產物
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --no-install wrangler deploy --config dist-cloudflare/enjoyspacefrontend/wrangler.json
